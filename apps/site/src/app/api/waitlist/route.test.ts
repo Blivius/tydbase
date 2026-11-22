@@ -94,7 +94,7 @@ describe("POST /api/waitlist", () => {
     const calls: Array<{ url: string; method: string; idempotencyKey: string | null }> = [];
 
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
+      const url = input instanceof Request ? input.url : input.toString();
       const method = init?.method ?? "GET";
       const headers = new Headers(init?.headers);
       calls.push({ url, method, idempotencyKey: headers.get("Idempotency-Key") });
@@ -138,7 +138,7 @@ describe("POST /api/waitlist", () => {
 
     const calls: string[] = [];
     globalThis.fetch = (async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input.toString();
+      const url = input instanceof Request ? input.url : input.toString();
       calls.push(url);
       return new Response(JSON.stringify({ message: "Contact already exists" }), { status: 409 });
     }) as typeof fetch;

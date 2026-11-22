@@ -99,6 +99,15 @@ function formatTtl(seconds: number): string {
   return `${mins}m ${String(secs).padStart(2, "0")}s`;
 }
 
+function cellText(value: unknown): string {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return value.toString();
+  }
+  return JSON.stringify(value) ?? "";
+}
+
 function maskEmailValue(value: string): string {
   const atIndex = value.indexOf("@");
   if (atIndex <= 1) return value;
@@ -423,12 +432,7 @@ export function InteractivePlaygroundSection() {
                               >
                                 {result.columns.map((col) => {
                                   const rawVal = row[col];
-                                  let text =
-                                    rawVal === null || rawVal === undefined
-                                      ? "null"
-                                      : typeof rawVal === "object"
-                                        ? JSON.stringify(rawVal)
-                                        : String(rawVal);
+                                  let text = cellText(rawVal);
                                   const isEmailCol = col.toLowerCase().includes("email");
                                   if (sqlPiiMask && isEmailCol) {
                                     text = maskEmailValue(text);
