@@ -2,10 +2,12 @@
 
 FROM oven/bun:1.4.4-alpine AS deps
 WORKDIR /app
+ENV HUSKY=0
 
 COPY package.json bun.lock turbo.json ./
 COPY apps/site/package.json ./apps/site/package.json
 COPY packages/config/package.json ./packages/config/package.json
+COPY packages/sdk/package.json ./packages/sdk/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/wasm-playground/package.json ./packages/wasm-playground/package.json
 
