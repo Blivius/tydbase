@@ -1,0 +1,32 @@
+/* Scalar API reference themed with TydBase tokens (packages/ui/src/tokens.css).
+   Huma's Scalar CSP only allows fonts from fonts.scalar.com, so the sans is Scalar's Inter;
+   code uses JetBrains Mono, which matches the brand. */
+:root {
+  --scalar-radius: 0px;
+  --scalar-radius-lg: 0px;
+  --scalar-radius-xl: 2px;
+  --scalar-font-code: "JetBrains Mono", ui-monospace, monospace;
+}
+.dark-mode {
+  --scalar-background-1: oklch(11% 0.011 162);
+  --scalar-background-2: oklch(14.5% 0.013 162);
+  --scalar-background-3: oklch(18.5% 0.015 162);
+  --scalar-background-accent: oklch(21% 0.042 160);
+  --scalar-color-1: oklch(96% 0.007 162);
+  --scalar-color-2: oklch(76% 0.012 162);
+  --scalar-color-3: oklch(61% 0.013 162);
+  --scalar-color-accent: oklch(78% 0.15 160);
+  --scalar-border-color: oklch(25% 0.015 162);
+  --scalar-color-green: oklch(78% 0.15 160);
+  --scalar-color-orange: oklch(80% 0.135 80);
+  --scalar-color-red: oklch(69% 0.175 24);
+  --scalar-sidebar-background-1: oklch(8.8% 0.01 162);
+  --scalar-sidebar-color-1: oklch(96% 0.007 162);
+  --scalar-sidebar-color-2: oklch(76% 0.012 162);
+  --scalar-sidebar-border-color: oklch(25% 0.015 162);
+  --scalar-sidebar-item-hover-background: oklch(18.5% 0.015 162);
+  --scalar-sidebar-item-active-background: oklch(21% 0.042 160);
+  --scalar-sidebar-color-active: oklch(78% 0.15 160);
+  --scalar-sidebar-search-background: oklch(14.5% 0.013 162);
+  --scalar-sidebar-search-border-color: oklch(25% 0.015 162);
+}

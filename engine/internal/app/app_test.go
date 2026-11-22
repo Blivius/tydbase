@@ -106,3 +106,15 @@ func TestModuleSelection(t *testing.T) {
 		t.Fatalf("health is always mounted, got %d", rec.Code)
 	}
 }
+
+func TestDocsServeThemedScalar(t *testing.T) {
+	h, _ := app.New(testCfg, app.ModuleNames())
+	rec := get(t, h, "/docs")
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "@scalar/api-reference") {
+		t.Fatalf("/docs should render Scalar, got %d", rec.Code)
+	}
+	if !strings.Contains(body, "--scalar-color-accent") || !strings.Contains(body, "forceDarkModeState") {
+		t.Fatal("/docs should carry the TydBase Scalar theme (customCss + dark mode)")
+	}
+}

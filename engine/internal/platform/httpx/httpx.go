@@ -3,6 +3,7 @@
 package httpx
 
 import (
+	_ "embed"
 	"net/http"
 	"time"
 
@@ -31,8 +32,30 @@ func New(cfg config.Config) (chi.Router, huma.API) {
 		URL:  "https://www.apache.org/licenses/LICENSE-2.0",
 	}
 
+	humaCfg.DocsRenderer = huma.DocsRendererScalar
+	humaCfg.DocsRendererConfig = map[string]any{
+		"theme":              "none",
+		"layout":             "modern",
+		"forceDarkModeState": "dark",
+		"hideDarkModeToggle": true,
+		"hideClientButton":   true,
+		"defaultOpenAllTags": true,
+		"customCss":          scalarCSS,
+		"metaData":           map[string]string{"title": "TydBase API Reference"},
+		// No vendor chrome or phoning home: Scalar's dev toolbar ("Generate SDKs & MCP", Deploy,
+		// Share), its hosted AI agent, and its telemetry (on by default) are all off.
+		"showDeveloperTools": "never",
+		"agent":              map[string]bool{"disabled": true},
+		"telemetry":          false,
+	}
+
 	return router, humachi.New(router, humaCfg)
 }
+
+// scalarCSS themes the /docs Scalar reference with TydBase tokens.
+//
+//go:embed scalar.css
+var scalarCSS string
 
 func cors(origin string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
