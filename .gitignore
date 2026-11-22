@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Go outputs
+backend/bin/
+*.exe
+*.test
+*.out
+coverage.txt
+
+# Environment & local state
+.env
+.env.local
+.env.*.local
+.waitlist-dev.json
+*.sqlite
+*.db
+
+# WASM artifacts
+*.wasm
+
+# OS & editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

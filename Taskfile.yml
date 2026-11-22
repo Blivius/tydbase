@@ -1,0 +1,50 @@
+version: "3"
+
+tasks:
+  install:
+    desc: Install JS/TS workspace dependencies with Bun
+    cmds:
+      - bun install
+
+  dev:
+    desc: Start all workspace dev servers via Turborepo
+    cmds:
+      - bun run dev
+
+  dev:site:
+    desc: Start the TydBase landing page & waitlist app
+    cmds:
+      - bun run --filter @tydbase/site dev
+
+  lint:
+    desc: Run oxlint across the monorepo
+    cmds:
+      - bun run lint
+
+  fmt:
+    desc: Format workspace code with oxfmt
+    cmds:
+      - bun run fmt
+
+  fmt:check:
+    desc: Check formatting with oxfmt
+    cmds:
+      - bun run fmt:check
+
+  typecheck:
+    desc: Run TypeScript type checks across all packages
+    cmds:
+      - bun run typecheck
+
+  build:
+    desc: Build all workspace apps and packages
+    cmds:
+      - bun run build
+
+  check:
+    desc: Run lint, formatting check, typecheck, and build
+    cmds:
+      - task: lint
+      - task: fmt:check
+      - task: typecheck
+      - task: build

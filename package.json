@@ -1,0 +1,30 @@
+{
+  "name": "tydbase",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "node": ">=26.13.1",
+    "bun": ">=1.4.4"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "oxlint --config .oxlintrc.json apps packages",
+    "fmt": "oxfmt --config .oxfmtrc.json --write apps packages",
+    "fmt:check": "oxfmt --config .oxfmtrc.json --check apps packages",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "oxfmt": "0.79.0",
+    "oxlint": "1.94.0",
+    "turbo": "2.11.13",
+    "typescript": "latest"
+  }
+}
