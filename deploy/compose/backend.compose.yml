@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend.Dockerfile
+    image: tydbase-api:local
+    ports:
+      - "${TYDBASE_PORT:-8080}:8080"
+    environment:
+      TYDBASE_PORT: "8080"
+      TYDBASE_ENV: ${TYDBASE_ENV:-development}
+      TYDBASE_CORS_ORIGIN: ${TYDBASE_CORS_ORIGIN:-http://localhost:3000}
+    restart: unless-stopped
