@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.7
-# apps/site (Next.js standalone). Production runs on Vercel; this image exists for local
-# Docker-first verification only.
+# apps/site (Next.js). Production runs on Vercel; these images exist for local Docker work.
+# Targets: (default) standalone production build · `dev` = `next dev` hot reload, used by
+# compose.dev.yml with the source directories bind-mounted.
 
 FROM oven/bun:1.4.4-alpine AS deps
 WORKDIR /app
@@ -13,9 +14,15 @@ COPY packages/ui/package.json packages/ui/package.json
 COPY packages/wasm-playground/package.json packages/wasm-playground/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
-FROM deps AS build
+FROM deps AS source
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
+
+FROM source AS dev
+EXPOSE 3000
+CMD ["bun", "run", "--filter", "@tydbase/site", "dev"]
+
+FROM source AS build
 RUN bun run --filter @tydbase/site build
 
 FROM node:26.13.1-alpine

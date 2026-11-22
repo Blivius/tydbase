@@ -72,14 +72,24 @@ tasks:
       - cd engine && go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
   up:
-    desc: Build and start the engine and the site (dev overlay), detached
+    desc: Hot-reload dev stack, detached (engine via air on :8080, site via next dev on :3000)
     cmds:
       - docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
 
-  down:
-    desc: Stop the engine and site containers
+  up:prod:
+    desc: Production builds, detached (distroless engine + standalone site), the pre-handover check
     cmds:
-      - docker compose -f docker/compose.yml -f docker/compose.dev.yml down
+      - docker compose -f docker/compose.yml --profile site up -d --build
+
+  logs:
+    desc: Follow engine and site logs
+    cmds:
+      - docker compose -f docker/compose.yml -f docker/compose.dev.yml logs -f engine site
+
+  down:
+    desc: Stop the engine and site (dev or prod)
+    cmds:
+      - docker compose -f docker/compose.yml -f docker/compose.dev.yml --profile site down
 
   dbs:
     desc: Start the seeded target databases (add MSSQL with `task dbs -- --profile mssql`)

@@ -1,6 +1,7 @@
-# Self-hosted TydBase: the engine (API now; embedded web app from P1).
-#   docker compose -f docker/compose.yml up -d --build
-# Local development adds compose.dev.yml (ports, dev env, the marketing site).
+# Production builds. Two uses:
+#   Self-host the engine:              docker compose -f docker/compose.yml up -d --build
+#   Production check before handover:  docker compose -f docker/compose.yml --profile site up -d --build
+# Hot-reload development layers compose.dev.yml on top (see that file).
 
 name: tydbase
 
@@ -24,6 +25,24 @@ services:
     read_only: true
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
+
+  # The marketing site's real production is Vercel. This standalone build is the local check.
+  site:
+    profiles: ["site"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.site
+    image: tydbase/site:local
+    container_name: tydbase-site
+    env_file:
+      - path: ../apps/site/.env
+        required: false
+    environment:
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    networks: [tydbase]
+    restart: unless-stopped
 
 networks:
   tydbase:

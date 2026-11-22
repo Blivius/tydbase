@@ -1,31 +1,57 @@
-# Local development overrides. Always layered on compose.yml:
+# Hot-reload development, layered on compose.yml (velaops pattern: dev image stage + bind-mounted
+# source + an in-container watcher):
 #   docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
 #
-#   Engine:  http://localhost:8080   (API docs: /docs)
-#   Site:    http://localhost:3000   (reads apps/site/.env when present, e.g. RESEND_API_KEY)
+#   Engine:  http://localhost:8080  air rebuilds + restarts on any engine/**/*.go save (~1-2s)
+#   Site:    http://localhost:3000  next dev; edits under apps/site/src and packages/*/src apply live
 #
-# Target databases are a separate stack (compose.dbs.yml). From inside a container, reach them
-# through host.docker.internal on their published ports.
+# Only source directories are mounted; dependencies stay in the image. After changing a
+# package.json, bun.lock, next.config.ts or go.mod, rebuild: add --build to the command above.
+#
+# Target databases are a separate stack (compose.dbs.yml): use host.docker.internal:<port>.
 
 services:
   engine:
+    build:
+      target: dev
+    image: tydbase/engine:dev
+    command: ["air", "-c", ".air.toml"]
     environment:
       TYDBASE_ENV: development
+    read_only: false
+    cap_drop: !reset []
+    volumes:
+      - ../engine:/src/engine
+      - go-mod:/go/pkg/mod
+      - go-build:/root/.cache/go-build
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "/src/engine/tmp/tydbase", "healthcheck"]
+      interval: 10s
+      start_period: 90s
+      retries: 6
 
   site:
+    profiles: !reset []
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.site
-    image: tydbase/site:local
-    container_name: tydbase-site
-    env_file:
-      - path: ../apps/site/.env
-        required: false
+      target: dev
+    image: tydbase/site:dev
     environment:
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-    ports:
-      - "3000:3000"
-    networks: [tydbase]
-    restart: unless-stopped
+      NODE_ENV: development
+    volumes:
+      - ../apps/site/src:/app/apps/site/src
+      - ../apps/site/public:/app/apps/site/public
+      - ../packages/ui/src:/app/packages/ui/src
+      - ../packages/wasm-playground/src:/app/packages/wasm-playground/src
+      - site-next:/app/apps/site/.next
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      start_period: 120s
+      retries: 6
+
+volumes:
+  go-mod:
+  go-build:
+  site-next:

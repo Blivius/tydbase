@@ -41,3 +41,6 @@ Thumbs.db
 .remember/
 .playwright-mcp/
 graphify-out/
+
+# air hot-reload build output
+engine/tmp/
