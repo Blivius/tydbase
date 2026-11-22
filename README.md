@@ -38,11 +38,12 @@ task dev:site          # site on :3000
 task sdk:gen           # regenerate the TS SDK after changing an API route
 ```
 
-Docker is the verification path:
+Docker is the verification path (details and DB logins in [`docker/README.md`](docker/README.md)):
 
 ```bash
-docker compose -p tydbase-api -f deploy/compose/backend.compose.yml up -d --build
-docker compose -p tydbase-site -f deploy/compose/site.compose.yml up -d --build
+task up                # engine :8080 + site :3000, detached
+task dbs               # seeded Postgres/pgvector, MySQL, MariaDB, MongoDB, Redis
+task down && task dbs:down
 ```
 
 ## Contributing and security

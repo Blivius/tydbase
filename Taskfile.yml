@@ -62,7 +62,7 @@ tasks:
     desc: Build all workspace apps, packages, and Go CLI binary
     cmds:
       - bun run build
-      - cd engine && go build -o ./bin/tydbase ./cmd/tydbase
+      - cd engine && go build -trimpath -ldflags "-X main.version=$(git describe --tags --always --dirty)" -o ./bin/tydbase ./cmd/tydbase
 
   test:
     desc: Run automated Bun and Go test suites
@@ -71,25 +71,25 @@ tasks:
       - cd engine && go test -race -count=1 ./...
       - cd engine && go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
-  docker:site:
-    desc: Build and start apps/site detached inside Docker Compose
+  up:
+    desc: Build and start the engine and the site (dev overlay), detached
     cmds:
-      - docker compose -f deploy/compose/site.compose.yml up -d --build
+      - docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
 
-  docker:engine:
-    desc: Build and start the Go engine detached inside Docker Compose
+  down:
+    desc: Stop the engine and site containers
     cmds:
-      - docker compose -f deploy/compose/backend.compose.yml up -d --build
+      - docker compose -f docker/compose.yml -f docker/compose.dev.yml down
 
-  dev:dbs:
-    desc: Start disposable local Postgres (pgvector), MySQL, MariaDB, MongoDB, and Redis
+  dbs:
+    desc: Start the seeded target databases (add MSSQL with `task dbs -- --profile mssql`)
     cmds:
-      - docker compose -f deploy/compose/dev-dbs.yml up -d
+      - docker compose -f docker/compose.dbs.yml {{.CLI_ARGS}} up -d
 
-  dev:dbs:down:
-    desc: Stop and wipe disposable local dev databases
+  dbs:down:
+    desc: Stop and wipe the target databases (seeds re-run on next start)
     cmds:
-      - docker compose -f deploy/compose/dev-dbs.yml down -v
+      - docker compose -f docker/compose.dbs.yml --profile mssql down -v
 
   check:
     desc: Run lint, formatting check, typecheck, tests, and build

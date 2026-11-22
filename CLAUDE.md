@@ -86,10 +86,11 @@ task check                    # lint, fmt:check, typecheck, test, build (JS + Go
 task sdk:gen                  # export engine OpenAPI → regenerate packages/sdk/src/schema.d.ts
 task dev:site                 # site on :3000 (Docker is still the verification path)
 
-docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build   # tydbase engine (+ site)
-docker compose -f docker/compose.dbs.yml up -d                                  # seeded target DBs
-docker compose -f docker/compose.dbs.yml --profile mssql up -d                  # + MSSQL
-docker compose -f docker/compose.dbs.yml down -v                                # wipe target DBs
+task up          # = docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
+                 #   engine :8080 (/docs) + site :3000 (reads apps/site/.env)
+task down
+task dbs         # seeded target DBs (compose.dbs.yml); `task dbs -- --profile mssql` adds MSSQL
+task dbs:down    # stop + wipe; seeds re-run on next start
 ```
 
 ---
@@ -136,11 +137,9 @@ engine/               Go module github.com/tydbase/tydbase/engine
   internal/platform/  shared kernel: config, httpx (router + Huma API)
   internal/driver/    engine catalog (+ Driver interface, drivers, pool from P1)
   sql/                goose migrations + sqlc queries (arrive in P1 · M1)
-docker/               Dockerfile, Dockerfile.site, compose*.yml, dbs/seed/
+docker/               Dockerfile, Dockerfile.site, compose{,.dev,.dbs}.yml, dbs/seed/, README.md (ports + logins)
 docs/                 00-DECISIONS.md, 01-PLAN.md
 ```
-
-Transition note: until M0.5-d lands, `docker/` is still `deploy/`. Delete this note then.
 
 ---
 
