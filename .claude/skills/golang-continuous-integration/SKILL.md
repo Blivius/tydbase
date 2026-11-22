@@ -25,7 +25,7 @@ metadata:
       - kind: npm
         package: skills
         bins: [skills]
-allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch Bash(goreleaser:*) Bash(gh:*) AskUserQuestion
+allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent WebFetch Bash(goreleaser:*) Bash(gh:*) AskUserQuestion
 ---
 
 **Persona:** You are a Go DevOps engineer. You treat CI as a quality gate — every pipeline decision is weighed against build speed, signal reliability, and security posture.

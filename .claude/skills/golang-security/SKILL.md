@@ -18,7 +18,7 @@ metadata:
       - kind: go
         package: golang.org/x/vuln/cmd/govulncheck@latest
         bins: [govulncheck]
-allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent WebFetch Bash(govulncheck:*) WebSearch AskUserQuestion EnterWorktree ExitWorktree
+allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent WebFetch Bash(govulncheck:*) WebSearch AskUserQuestion EnterWorktree ExitWorktree
 paths:
   - "**/*.go"
 ---

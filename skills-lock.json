@@ -15,12 +15,26 @@
       "skillPath": "skills/golang-concurrency/SKILL.md",
       "computedHash": "c6c1829be72bba6eb7b2346561bb895605c65eacf35a2535bfca9828006a69e0"
     },
+    "golang-context": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-context/SKILL.md",
+      "computedHash": "b3d709c734ef05f0ad6a48719d64f2b942f1ae1ef11e5d77975201c95c2a06e0"
+    },
     "golang-continuous-integration": {
       "source": "samber/cc-skills-golang",
       "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
       "sourceType": "github",
       "skillPath": "skills/golang-continuous-integration/SKILL.md",
       "computedHash": "9fbae059833a865d905f6341498fc26b9e50f9b782fffb3bbb68b87ce48ff53c"
+    },
+    "golang-database": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-database/SKILL.md",
+      "computedHash": "d56ece0241eacc7a15cd3679300b80100d527c3a83d5b475f631bb8c7ddd8bff"
     },
     "golang-error-handling": {
       "source": "samber/cc-skills-golang",
@@ -36,6 +50,13 @@
       "skillPath": "skills/golang-how-to/SKILL.md",
       "computedHash": "17f53db31d588f0798df5736dedf3f6b4655d658a2669a92d72bd33f0de7717b"
     },
+    "golang-modernize": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-modernize/SKILL.md",
+      "computedHash": "f2759e23978fdc4255cd97390ed6e8e72bcf129af889d4f99e0443abd042fe33"
+    },
     "golang-naming": {
       "source": "samber/cc-skills-golang",
       "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
@@ -49,6 +70,13 @@
       "sourceType": "github",
       "skillPath": "skills/golang-performance/SKILL.md",
       "computedHash": "d27f7392a17e63117abd26def53f53bf1b8e3e551fa9f89e8b46303f5813847c"
+    },
+    "golang-project-layout": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-project-layout/SKILL.md",
+      "computedHash": "bd8ad6f0fd05ba05a135af9eb766fdf7d838c33cb07aa4625bfd16a9fbe76903"
     },
     "golang-security": {
       "source": "samber/cc-skills-golang",

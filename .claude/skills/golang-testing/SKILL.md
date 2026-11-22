@@ -18,7 +18,7 @@ metadata:
       - kind: go
         package: github.com/cweill/gotests/gotests@latest
         bins: [gotests]
-allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(git:*) Agent Bash(gotests:*) AskUserQuestion
+allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent Bash(gotests:*) AskUserQuestion
 paths:
   - "**/*.go"
 ---
