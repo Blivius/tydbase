@@ -46,7 +46,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${schibstedGrotesk.variable} ${jetBrainsMono.variable}`}>
-      <body>{children}</body>
+      {/* Browser extensions (e.g. Grammarly) add attributes to <body> before hydration; this
+          silences only that element's attribute diff, not mismatches in the tree below. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
