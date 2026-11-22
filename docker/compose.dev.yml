@@ -22,6 +22,9 @@ services:
     cap_drop: !reset []
     volumes:
       - ../engine:/src/engine
+      # Own data volume: the dev container runs as root, so its master.key and tydbase.db would be
+      # unreadable to the nonroot production image if they shared tydbase-data.
+      - tydbase-data-dev:/data
       - go-mod:/go/pkg/mod
       - go-build:/root/.cache/go-build
     extra_hosts:
@@ -52,6 +55,8 @@ services:
       retries: 6
 
 volumes:
+  tydbase-data-dev:
+    name: tydbase-data-dev
   go-mod:
   go-build:
   site-next:

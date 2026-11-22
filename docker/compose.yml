@@ -18,8 +18,12 @@ services:
     environment:
       TYDBASE_ENV: ${TYDBASE_ENV:-production}
       TYDBASE_CORS_ORIGIN: ${TYDBASE_CORS_ORIGIN:-http://localhost:3000}
+      TYDBASE_MASTER_KEY: ${TYDBASE_MASTER_KEY:-}
     ports:
       - "${TYDBASE_PORT:-8080}:8080"
+    # tydbase.db + master.key (auto-generated on first boot unless TYDBASE_MASTER_KEY is set).
+    volumes:
+      - tydbase-data:/data
     networks: [tydbase]
     restart: unless-stopped
     read_only: true
@@ -43,6 +47,10 @@ services:
       - "3000:3000"
     networks: [tydbase]
     restart: unless-stopped
+
+volumes:
+  tydbase-data:
+    name: tydbase-data
 
 networks:
   tydbase:

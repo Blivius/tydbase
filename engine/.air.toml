@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
 cmd = "go build -o ./tmp/tydbase ./cmd/tydbase"
 entrypoint = ["./tmp/tydbase", "server"]
-include_ext = ["go"]
+include_ext = ["go", "sql", "css"]  # .sql and .css are go:embed-ed
 exclude_dir = ["tmp", "bin"]
 exclude_regex = ["_test\\.go$"]
 delay = 300
