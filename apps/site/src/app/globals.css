@@ -1,5 +1,5 @@
 /* Hallmark · custom · emerald-obsidian · job: waitlist · nav: single-row mark + section links + primary action · footer: compact single-row colophon · hero: split-stage */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, cut floating blurs, browser chrome bars, and eyebrow pills so live PGlite SQL execution and the MCP approval gate lead the page */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, cut floating blurs, browser chrome bars, and eyebrow pills so live PGlite SQL execution, animated topology diagrams, and the MCP approval gate lead the page */
 /* Hallmark · waive 85 · the founder requested a pre-launch beta waitlist landing page for tydbase.blivius.com · collecting early beta signups via Loops.so is the primary job of this page */
 
 @import "tailwindcss";
@@ -173,7 +173,8 @@ select:focus-visible,
   cursor: pointer;
   transition:
     background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .tyd-btn-secondary:hover:not(:disabled) {
@@ -223,20 +224,38 @@ select:focus-visible,
   box-shadow: var(--shadow-panel);
 }
 
-@keyframes tyd-scan-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: translateX(0);
+@keyframes tyd-packet-flow {
+  from {
+    stroke-dashoffset: 32;
   }
-  50% {
-    opacity: 1;
-    transform: translateX(6px);
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-.tyd-relay-pulse {
-  animation: tyd-scan-pulse 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+.tyd-packet-line {
+  stroke-dasharray: 6 10;
+  animation: tyd-packet-flow 1.4s linear infinite;
+}
+
+@keyframes tyd-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.tyd-cursor {
+  display: inline-block;
+  width: 0.45rem;
+  height: 1em;
+  vertical-align: -0.14em;
+  background-color: var(--color-accent);
+  animation: tyd-cursor-blink 1s step-end infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

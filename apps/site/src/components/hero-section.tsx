@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Database, Play, ShieldAlert, ShieldCheck, Terminal } from "lucide-react";
-import { motion } from "motion/react";
+import { Check, Database, Play, ShieldAlert, ShieldCheck, Terminal, Zap } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 
@@ -11,16 +11,23 @@ interface EnginePreview {
   id: EnginePreviewKey;
   label: string;
   env: string;
+  latencyMs: string;
   query: string;
   columns: string[];
   rows: string[][];
+  mcpProposal: string;
+  affectedHint: string;
 }
+
+const ENGINE_KEYS: EnginePreviewKey[] = ["postgres", "mongodb", "redis"];
+const CYCLE_DURATION_MS = 6000;
 
 const ENGINE_PREVIEWS: Record<EnginePreviewKey, EnginePreview> = {
   postgres: {
     id: "postgres",
     label: "PostgreSQL + pgvector",
     env: "production",
+    latencyMs: "4.1 ms",
     query: `SELECT id, email, cosine_distance(embedding, $1) AS dist
 FROM support_tickets
 ORDER BY dist ASC LIMIT 3;`,
@@ -30,11 +37,14 @@ ORDER BY dist ASC LIMIT 3;`,
       ["tkt_9038", "s***@kestrelpay.io", "0.068"],
       ["tkt_9029", "t***@harborml.ai", "0.094"],
     ],
+    mcpProposal: "claude-code: DELETE FROM sessions WHERE expired_at < now();",
+    affectedHint: "Dry-run: 142 rows",
   },
   mongodb: {
     id: "mongodb",
     label: "MongoDB",
     env: "staging",
+    latencyMs: "6.4 ms",
     query: `db.sessions.aggregate([
   { $match: { active: true } },
   { $project: { org: 1, region: 1, ttlSec: 1 } }
@@ -45,11 +55,14 @@ ORDER BY dist ASC LIMIT 3;`,
       ["kestrel-pay", "eu-central-1", "1890"],
       ["harbor-ml", "ap-southeast-1", "2740"],
     ],
+    mcpProposal: "openai-codex: db.webhooks.updateMany({ retries: { $gt: 5 } }, ...)",
+    affectedHint: "Dry-run: 19 docs",
   },
   redis: {
     id: "redis",
     label: "Redis / Valkey",
     env: "localhost relay",
+    latencyMs: "1.2 ms",
     query: `SCAN 0 MATCH "mcp:session:*" COUNT 20`,
     columns: ["key", "type", "ttl"],
     rows: [
@@ -57,6 +70,8 @@ ORDER BY dist ASC LIMIT 3;`,
       ["mcp:session:codex-3c9", "hash", "19m"],
       ["mcp:session:gemini-7a2", "hash", "52m"],
     ],
+    mcpProposal: "gemini-cli: DEL cache:pricing:eu-central-1",
+    affectedHint: "Dry-run: 1 key",
   },
 };
 
@@ -65,6 +80,7 @@ export function HeroSection() {
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const [activeEngine, setActiveEngine] = useState<EnginePreviewKey>("postgres");
+  const [cycleKey, setCycleKey] = useState(0);
   const [approvalState, setApprovalState] = useState<"pending" | "approved" | "rejected">(
     "pending"
   );
@@ -72,13 +88,13 @@ export function HeroSection() {
 
   useEffect(() => {
     if (isPaused) return;
-    const keys: EnginePreviewKey[] = ["postgres", "mongodb", "redis"];
     const timer = window.setInterval(() => {
       setActiveEngine((prev) => {
-        const nextIdx = (keys.indexOf(prev) + 1) % keys.length;
-        return keys[nextIdx] ?? "postgres";
+        const nextIdx = (ENGINE_KEYS.indexOf(prev) + 1) % ENGINE_KEYS.length;
+        return ENGINE_KEYS[nextIdx] ?? "postgres";
       });
-    }, 5200);
+      setCycleKey((k) => k + 1);
+    }, CYCLE_DURATION_MS);
     return () => window.clearInterval(timer);
   }, [isPaused]);
 
@@ -160,7 +176,7 @@ export function HeroSection() {
               href="/demo"
               className="whitespace-nowrap text-[0.9375rem] font-medium text-ink-secondary underline decoration-line-strong underline-offset-4 transition-colors hover:text-ink"
             >
-              Play 60-second teaser
+              Play interactive teaser
             </Link>
           </div>
 
@@ -193,7 +209,7 @@ export function HeroSection() {
               role="tablist"
               aria-label="Engine preview"
             >
-              {(Object.keys(ENGINE_PREVIEWS) as EnginePreviewKey[]).map((key) => {
+              {ENGINE_KEYS.map((key) => {
                 const item = ENGINE_PREVIEWS[key];
                 const isSelected = activeEngine === key;
                 return (
@@ -205,8 +221,10 @@ export function HeroSection() {
                     onClick={() => {
                       setIsPaused(true);
                       setActiveEngine(key);
+                      setApprovalState("pending");
+                      setCycleKey((k) => k + 1);
                     }}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`relative rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                       isSelected
                         ? "bg-accent-tint text-accent"
                         : "text-ink-secondary hover:bg-surface-raised hover:text-ink"
@@ -220,111 +238,152 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => setIsPaused((prev) => !prev)}
-              className="rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:border-line-strong hover:text-ink"
+              className="rounded-md border border-line px-2.5 py-1 text-xs font-medium whitespace-nowrap text-ink-secondary transition-colors hover:border-line-strong hover:text-ink"
             >
               {isPaused ? "Resume cycle" : "Pause cycle"}
             </button>
           </div>
 
-          <motion.div
-            key={preview.id}
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="divide-y divide-line"
-          >
-            <div className="bg-surface-well/65 px-5 py-4">
-              <div className="mb-2 flex items-center justify-between text-xs text-ink-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <Database className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-                  Environment: {preview.env}
-                </span>
-                <span>WASM PII mask active</span>
-              </div>
-              <pre className="overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-ink">
-                <code>{preview.query}</code>
-              </pre>
-            </div>
+          <div className="h-0.5 w-full overflow-hidden bg-surface-well">
+            <motion.div
+              key={`${activeEngine}-${cycleKey}-${isPaused ? "paused" : "run"}`}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: isPaused ? 0.35 : 1 }}
+              transition={{
+                duration: isPaused ? 0.2 : CYCLE_DURATION_MS / 1000,
+                ease: "linear",
+              }}
+              style={{ transformOrigin: "left" }}
+              className="h-full w-full bg-accent"
+            />
+          </div>
 
-            <div className="overflow-x-auto px-5 py-3.5">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-line text-ink-muted">
-                    {preview.columns.map((col) => (
-                      <th key={col} className="pb-2 pr-4 font-medium">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line/60 font-mono text-[0.8125rem] text-ink-secondary">
-                  {preview.rows.map((row) => (
-                    <tr key={row[0]}>
-                      {row.map((cell, idx) => (
-                        <td
-                          key={`${row[0]}-${idx}`}
-                          className={`py-2 pr-4 tyd-tabular ${idx === 0 ? "text-ink" : ""}`}
-                        >
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex flex-col gap-3 bg-surface-raised/55 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                  {approvalState === "approved" ? (
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                  ) : (
-                    <ShieldAlert className="h-4 w-4 shrink-0 text-warn" aria-hidden="true" />
-                  )}
-                  <span>
-                    {approvalState === "pending" && "MCP write paused for approval"}
-                    {approvalState === "approved" && "Write approved and logged to audit trail"}
-                    {approvalState === "rejected" && "Write blocked before reaching production"}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={preview.id}
+              initial={{ opacity: 0.25, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0.25, y: -6 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="divide-y divide-line"
+            >
+              <div className="bg-surface-well/65 px-5 py-4">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Database className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                    Environment: {preview.env}
+                  </span>
+                  <span className="inline-flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1 text-accent tyd-tabular">
+                      <Zap className="h-3 w-3" aria-hidden="true" />
+                      {preview.latencyMs}
+                    </span>
+                    <span>WASM PII mask active</span>
                   </span>
                 </div>
-                <p className="mt-1 truncate font-mono text-xs text-ink-muted">
-                  <Terminal className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
-                  claude-code: DELETE FROM sessions WHERE expired_at &lt; now();
-                </p>
+                <pre className="overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-ink">
+                  <code>
+                    {preview.query}
+                    <span className="tyd-cursor ml-1" aria-hidden="true" />
+                  </code>
+                </pre>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                {approvalState === "pending" ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setApprovalState("approved")}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-                    >
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setApprovalState("rejected")}
-                      className="inline-flex h-9 items-center rounded-md border border-danger/50 bg-danger-tint px-3 text-xs font-medium text-danger transition-colors hover:border-danger"
-                    >
-                      Reject
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setApprovalState("pending")}
-                    className="inline-flex h-9 items-center rounded-md border border-line-strong px-3 text-xs font-medium text-ink-secondary transition-colors hover:text-ink"
-                  >
-                    Reset gate
-                  </button>
-                )}
+              <div className="overflow-x-auto px-5 py-3.5">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-ink-muted">
+                      {preview.columns.map((col) => (
+                        <th key={col} className="pb-2 pr-4 font-medium">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/60 font-mono text-[0.8125rem] text-ink-secondary">
+                    {preview.rows.map((row, rowIdx) => (
+                      <motion.tr
+                        key={row[0]}
+                        initial={{ opacity: 0.3, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{
+                          duration: 0.22,
+                          delay: rowIdx * 0.06,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
+                      >
+                        {row.map((cell, idx) => (
+                          <td
+                            key={`${row[0]}-${idx}`}
+                            className={`py-2 pr-4 tyd-tabular ${idx === 0 ? "text-ink" : ""}`}
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </motion.div>
+
+              <div className="flex flex-col gap-3 bg-surface-raised/55 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-ink">
+                    {approvalState === "approved" ? (
+                      <ShieldCheck className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                    ) : (
+                      <ShieldAlert className="h-4 w-4 shrink-0 text-warn" aria-hidden="true" />
+                    )}
+                    <span>
+                      {approvalState === "pending" && `MCP write paused (${preview.affectedHint})`}
+                      {approvalState === "approved" && "Write approved and logged to audit trail"}
+                      {approvalState === "rejected" && "Write blocked before reaching target"}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate font-mono text-xs text-ink-muted">
+                    <Terminal className="mr-1.5 inline h-3 w-3" aria-hidden="true" />
+                    {preview.mcpProposal}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {approvalState === "pending" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPaused(true);
+                          setApprovalState("approved");
+                        }}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-xs font-semibold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
+                      >
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPaused(true);
+                          setApprovalState("rejected");
+                        }}
+                        className="inline-flex h-9 items-center rounded-md border border-danger/50 bg-danger-tint px-3 text-xs font-medium whitespace-nowrap text-danger transition-colors hover:border-danger"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setApprovalState("pending")}
+                      className="inline-flex h-9 items-center rounded-md border border-line-strong px-3 text-xs font-medium whitespace-nowrap text-ink-secondary transition-colors hover:text-ink"
+                    >
+                      Reset gate
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>
