@@ -135,9 +135,9 @@ packages/config/      shared tsconfig
 engine/               Go module github.com/tydbase/tydbase/engine
   cmd/tydbase/        thin main
   internal/app/       composition root: module registry, health route, boundaries_test.go
-  internal/platform/  shared kernel: config, httpx (router + Huma API)
+  internal/platform/  shared kernel: config, httpx (router + Huma API), store (SQLite + goose
+                      migrations in store/migrations/), vault (AES-256-GCM envelope)
   internal/driver/    engine catalog (+ Driver interface, drivers, pool from P1)
-  sql/                goose migrations + sqlc queries (arrive in P1 · M1)
 docker/               Dockerfile, Dockerfile.site, compose{,.dev,.dbs}.yml, dbs/seed/, README.md (ports + logins)
 docs/                 00-DECISIONS.md, 01-PLAN.md
 ```
@@ -202,7 +202,7 @@ Animation and layout rules:
   - `t.Context()` in tests.
 - Builds use `CGO_ENABLED=0 -trimpath`, with the version stamped via `-ldflags "-X main.version=..."`.
 - Tools: goose is a library (migrations embedded). sqlc will run via `go tool -modfile=tools/go.mod sqlc`
-  (the tools module lands with the first sqlc query in P1 · M1). golangci-lint is pinned in CI and
+  (the tools module lands with the workspace module's first queries in P1 · M3). golangci-lint is pinned in CI and
   installed with brew locally.
 - Adding a module: create `internal/<name>/` with `Register(huma.API)`, then add it to the `modules`
   table in `internal/app/app.go`. That is all `--modules` needs.
@@ -254,5 +254,13 @@ Animation and layout rules:
 - **Project skills had `Bash(git:*)` stripped from their `allowed-tools`** so git stays behind a
   permission prompt. `bunx skills update` restores upstream files. Re-run
   `sed -i '' -E '/^allowed-tools:/ s/ Bash\(git:\*\)//' .claude/skills/*/SKILL.md` after any update.
+- **`master.key` (or `TYDBASE_MASTER_KEY`) is the only way to decrypt stored DB passwords.** It is
+  auto-generated only while no data key exists; with secrets present, a missing or wrong key
+  refuses to boot instead of minting a new one. Back up the data dir as a whole and keep the backup
+  as private as the key.
+- **Dev and prod engines use separate data volumes** (`tydbase-data-dev`, `tydbase-data`). The dev
+  container runs as root, so its files would be unreadable to the nonroot production image.
+- **Migrations are embedded.** A new `.sql` file under `store/migrations/` ships with the binary;
+  never edit an applied migration, add the next numbered one.
 - **Paradigm IDs are `sql`, `document`, `kv`, `vector`.** They are wire values in the SDK and catalog.
   Don't rename them.

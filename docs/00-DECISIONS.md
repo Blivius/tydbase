@@ -65,6 +65,11 @@ and never written by TydBase except through an approved mutation (P5).
 
 **3.3 Credentials use an AES-256-GCM envelope vault.**
 - Per-workspace DEK, wrapped by a KEK from `TYDBASE_MASTER_KEY` or `<dataDir>/master.key` (0600).
+- With neither set, both `start` and `server` generate `master.key` on first boot, but only while no
+  DEK exists. With secrets present, a missing or mismatched key refuses to boot (2026-11-22).
+- Ciphertexts are bound to their workspace and owner (for example the connection id) as GCM
+  associated data, so a ciphertext copied to another row fails to open. Deleting a workspace deletes
+  its DEK, which shreds its secrets.
 - *Rejected:* storing plaintext, and also never storing (the legacy backend's approach, which forced re-entry on every session).
 
 **3.4 Every execute is bounded:**
@@ -76,6 +81,16 @@ A read-only transaction alone is not a sandbox (see CLAUDE.md hazards).
 
 **3.5 Pools are keyed per (workspace, connection) and have no global singletons.** The legacy
 backend's single global connection per engine leaked one user's queries into another's database.
+
+**3.6 Data dir and IDs (2026-11-22).**
+- One `TYDBASE_DATA_DIR`, defaulting to `os.UserConfigDir()/tydbase` in every mode. The Docker
+  image sets `/data` on the `tydbase-data` volume.
+- Primary keys are UUIDv7 text from the stdlib `uuid` package: time-sortable, unguessable in URLs,
+  and unchanged when the Postgres backend lands. *Rejected:* integer autoincrement.
+
+**3.7 `query_audit` keeps the full SQL text (2026-11-22).** Governance is the product: you can see
+exactly what an AI ran. Literals may hold PII, so retention and redaction become a setting later.
+*Rejected:* storing only literal-redacted SQL.
 
 ---
 

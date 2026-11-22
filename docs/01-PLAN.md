@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ · Phase 0.5 ✅ (2026-11-22: CI + Security green, tydbase.blivius.com live on Vercel) · Phase 1 ← current (M1 next)**
+Status: **Pre-Phase ✅ · Phase 0 ✅ · Phase 0.5 ✅ (2026-11-22: CI + Security green, tydbase.blivius.com live on Vercel) · Phase 1 ← current (M1 ✅, M2 next)**
 
 ---
 
@@ -75,9 +75,9 @@ reachable on their host ports.
 
 | Milestone | Scope |
 |---|---|
-| M1 Store + vault | `platform/store`: SQLite WAL + foreign keys + embedded goose (`workspaces`, `connections`, `saved_queries`, `query_audit`). `platform/vault`: AES-256-GCM envelope with KEK from env or `master.key` |
+| M1 Store + vault | `platform/store`: SQLite WAL + foreign keys + embedded goose (`workspaces`, `connections`, `saved_queries`, `query_audit`). `platform/vault`: AES-256-GCM envelope with KEK from env or `master.key`. Server boots the platform; Docker data volume `/data` |
 | M2 Driver + pool | `Driver` interface (`Ping`, `Introspect`, `Execute`); pgx/v5 driver with READ ONLY tx, `statement_timeout`, row/byte caps and `truncated` flag; pool keyed by (workspace, connection) with idle TTL (`synctest` tests); testcontainers |
-| M3 Workspace API | Connections CRUD + test, schema, query, saved queries; router changes (no CORS, per-route deadlines, `RealIP` only behind `TYDBASE_TRUSTED_PROXY`, `WriteTimeout: 0`); SDK regen |
+| M3 Workspace API | Connections CRUD + test, schema, query, saved queries (sqlc via `engine/tools/go.mod`, generated into `workspace/internal/store`); router changes (no CORS, per-route deadlines, `RealIP` only behind `TYDBASE_TRUSTED_PROXY`, `WriteTimeout: 0`); SDK regen |
 | M4 SPA + embed | `apps/web` (Vite, TanStack Router, Tailwind 4, `@tydbase/ui`, `@tydbase/sdk`, `@tanstack/react-virtual`); CodeMirror editor moved to `packages/ui`; `internal/webui` with SPA fallback; `start` on 127.0.0.1:4800; image builds web first; TanStack skills wired in |
 
 **Acceptance:** run the Docker image and the `start` binary against seeded Postgres and confirm:
