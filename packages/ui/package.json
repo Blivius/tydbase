@@ -12,9 +12,9 @@
   },
   "devDependencies": {
     "@tydbase/config": "workspace:*",
-    "@types/react": "latest",
-    "react": "19.3.1",
-    "typescript": "latest"
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0"

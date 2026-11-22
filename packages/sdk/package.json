@@ -12,12 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "openapi-fetch": "^0.14.0"
+    "openapi-fetch": "0.14.1"
   },
   "devDependencies": {
     "@tydbase/config": "workspace:*",
-    "@types/bun": "latest",
-    "openapi-typescript": "^7.10.1",
-    "typescript": "^5.9.3"
+    "@types/bun": "catalog:",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
   }
 }

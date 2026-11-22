@@ -1,0 +1,5 @@
+[install]
+# Lockfile-exact installs: `bun add` writes exact versions, so CI and a laptop resolve the same tree.
+exact = true
+# Supply-chain gate: refuse versions published less than a day ago.
+minimumReleaseAge = 86400
