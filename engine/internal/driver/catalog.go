@@ -44,6 +44,7 @@ var catalog = []Descriptor{
 		Status:         "tier1",
 	},
 	{
+		// VECTOR type and index since MariaDB 11.7 (docker/compose.dbs.yml runs 11.8).
 		ID:             "mariadb",
 		Name:           "MariaDB",
 		Paradigm:       ParadigmSQL,
@@ -80,7 +81,8 @@ var catalog = []Descriptor{
 		DefaultPort:    27017,
 		SupportsRelay:  true,
 		SupportsReadTx: false,
-		SupportsVector: true,
+		// Vector search is Atlas-only (or an 8.2+ preview); no V1 driver path uses it.
+		SupportsVector: false,
 		Status:         "tier1",
 	},
 	{
