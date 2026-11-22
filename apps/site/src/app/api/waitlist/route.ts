@@ -3,219 +3,120 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { joinWithResend, type ResendConfig, type WaitlistSignup } from "./resend";
 
 const waitlistSchema = z.object({
-  email: z.string().trim().email("Enter a valid work or personal email address."),
+  email: z.string().trim().toLowerCase().email("Enter a valid work or personal email address."),
   role: z.string().trim().max(80).optional(),
   databases: z.array(z.string().trim().max(40)).max(10).optional(),
   aiTools: z.array(z.string().trim().max(40)).max(10).optional(),
   source: z.string().trim().max(60).optional(),
 });
 
-interface LocalWaitlistEntry {
-  email: string;
-  role?: string;
-  databases: string[];
-  aiTools: string[];
-  source: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const RESEND_TIMEOUT_MS = 30_000;
+// ---- Rate limiting --------------------------------------------------------------------------
+// ponytail: per-instance memory limiter. On Vercel every instance keeps its own map; add a Vercel
+// Firewall rate-limit rule if signups get abused.
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_REQUESTS = 10;
+const RATE_TRACKED_IPS_MAX = 5_000;
 const ipHits = new Map<string, number[]>();
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (ipHits.get(ip) ?? []).filter((ts) => now - ts < RATE_WINDOW_MS);
-  if (recent.length >= RATE_MAX_REQUESTS) {
-    ipHits.set(ip, recent);
-    return true;
+function isRateLimited(ip: string, now = Date.now()): boolean {
+  if (ipHits.size > RATE_TRACKED_IPS_MAX) {
+    for (const [key, hits] of ipHits) {
+      if (now - (hits.at(-1) ?? 0) >= RATE_WINDOW_MS) ipHits.delete(key);
+    }
   }
-  recent.push(now);
+  const recent = (ipHits.get(ip) ?? []).filter((ts) => now - ts < RATE_WINDOW_MS);
+  const limited = recent.length >= RATE_MAX_REQUESTS;
+  if (!limited) recent.push(now);
   ipHits.set(ip, recent);
-  return false;
+  return limited;
 }
 
-function getLocalStorePath(): string {
-  return path.join(process.cwd(), ".waitlist-dev.json");
+// Vercel sets x-real-ip to the connecting client and overwrites any value the client sent.
+// X-Forwarded-For is client-controlled and deliberately ignored.
+function clientIp(request: Request): string {
+  return request.headers.get("x-real-ip")?.trim() || "local";
 }
 
-async function upsertLocalEntry(
-  payload: z.infer<typeof waitlistSchema>
-): Promise<{ alreadyJoined: boolean }> {
-  const filePath = getLocalStorePath();
-  let entries: LocalWaitlistEntry[] = [];
+// ---- Config -----------------------------------------------------------------------------------
+const env = (name: string) => process.env[name]?.trim() || undefined;
 
+function resendConfig(): ResendConfig | null {
+  const apiKey = env("RESEND_API_KEY");
+  if (!apiKey) return null;
+  return {
+    apiKey,
+    fromEmail: env("RESEND_FROM_EMAIL"),
+    notifyEmail: env("RESEND_NOTIFY_EMAIL"),
+    replyTo: env("RESEND_REPLY_TO"),
+    segmentId: env("RESEND_SEGMENT_ID"),
+  };
+}
+
+let configWarned = false;
+function warnOnPartialConfig(config: ResendConfig) {
+  if (configWarned || config.fromEmail) return;
+  configWarned = true;
+  console.warn(
+    "[waitlist] RESEND_FROM_EMAIL is empty: contacts are saved but no confirmation" +
+      (config.notifyEmail ? " or RESEND_NOTIFY_EMAIL alert" : "") +
+      " is sent. Set it to an address on your verified Resend domain."
+  );
+}
+
+// ---- Local dev store (never used in production) -----------------------------------------------
+const localEntrySchema = z.object({
+  email: z.string(),
+  role: z.string().optional(),
+  databases: z.array(z.string()),
+  aiTools: z.array(z.string()),
+  source: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+type LocalEntry = z.infer<typeof localEntrySchema>;
+
+async function upsertLocalEntry(signup: WaitlistSignup): Promise<{ alreadyJoined: boolean }> {
+  const filePath = path.join(process.cwd(), ".waitlist-dev.json");
+  let entries: LocalEntry[] = [];
   if (existsSync(filePath)) {
     try {
-      const raw = await readFile(filePath, "utf8");
-      const parsed: unknown = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        entries = parsed as LocalWaitlistEntry[];
-      }
+      const stored = z
+        .array(localEntrySchema)
+        .safeParse(JSON.parse(await readFile(filePath, "utf8")));
+      if (stored.success) entries = stored.data;
     } catch {
       entries = [];
     }
   }
 
-  const normalizedEmail = payload.email.toLowerCase();
-  const nowIso = new Date().toISOString();
-  const existingIdx = entries.findIndex((item) => item.email === normalizedEmail);
-
-  if (existingIdx >= 0) {
-    const existing = entries[existingIdx];
-    if (existing) {
-      entries[existingIdx] = {
-        ...existing,
-        role: payload.role ?? existing.role,
-        databases:
-          payload.databases && payload.databases.length > 0
-            ? payload.databases
-            : existing.databases,
-        aiTools: payload.aiTools && payload.aiTools.length > 0 ? payload.aiTools : existing.aiTools,
-        updatedAt: nowIso,
-      };
-    }
-    await writeFile(filePath, JSON.stringify(entries, null, 2), "utf8");
-    return { alreadyJoined: true };
-  }
-
-  entries.push({
-    email: normalizedEmail,
-    role: payload.role,
-    databases: payload.databases ?? [],
-    aiTools: payload.aiTools ?? [],
-    source: payload.source ?? "tydbase-waitlist",
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  });
-
-  await writeFile(filePath, JSON.stringify(entries, null, 2), "utf8");
-  return { alreadyJoined: false };
-}
-
-async function saveResendWaitlistContact(
-  apiKey: string,
-  payload: z.infer<typeof waitlistSchema>
-): Promise<{ alreadyJoined: boolean; contactId?: string }> {
-  const normalizedEmail = payload.email.toLowerCase();
-  const audienceId = process.env.RESEND_AUDIENCE_ID?.trim();
-  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
-  const notifyEmail = process.env.RESEND_NOTIFY_EMAIL?.trim();
-
-  const endpoint = audienceId
-    ? `https://api.resend.com/audiences/${encodeURIComponent(audienceId)}/contacts`
-    : "https://api.resend.com/contacts";
-
-  const contactRes = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: normalizedEmail,
-      first_name: payload.role?.slice(0, 60) || undefined,
-      unsubscribed: false,
-    }),
-    signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
-  });
-
-  let alreadyJoined = false;
-  let contactId: string | undefined;
-
-  if (contactRes.ok) {
-    const data = (await contactRes.json()) as { id?: string };
-    contactId = data.id;
-  } else if (contactRes.status === 409) {
-    alreadyJoined = true;
+  const now = new Date().toISOString();
+  const existing = entries.find((entry) => entry.email === signup.email);
+  if (existing) {
+    existing.role = signup.role ?? existing.role;
+    if (signup.databases?.length) existing.databases = signup.databases;
+    if (signup.aiTools?.length) existing.aiTools = signup.aiTools;
+    existing.updatedAt = now;
   } else {
-    const errBody = await contactRes.text();
-    throw new Error(`Resend contact error (${contactRes.status}): ${errBody}`);
-  }
-
-  // Send a concise beta confirmation email when a verified sender address is configured.
-  if (fromEmail && !alreadyJoined) {
-    const stackLines = [
-      payload.role ? `Role: ${payload.role}` : null,
-      payload.databases && payload.databases.length > 0
-        ? `Databases: ${payload.databases.join(", ")}`
-        : null,
-      payload.aiTools && payload.aiTools.length > 0
-        ? `AI clients: ${payload.aiTools.join(", ")}`
-        : null,
-    ].filter(Boolean);
-
-    const confirmText = [
-      "You are on the TydBase private beta waitlist.",
-      "",
-      "We are onboarding early teams in batches at tydbase.blivius.com and prioritizing the database engines and MCP workflows requested most.",
-      ...(stackLines.length > 0 ? ["", ...stackLines] : []),
-      "",
-      "Self-hosted TydBase stays Apache-2.0 and free forever.",
-      "TydBase / Blivius HQ",
-    ].join("\n");
-
-    const confirmRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `tydbase-waitlist-${normalizedEmail}`,
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [normalizedEmail],
-        subject: "You are on the TydBase private beta list",
-        text: confirmText,
-      }),
-      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
+    entries.push({
+      email: signup.email,
+      role: signup.role,
+      databases: signup.databases ?? [],
+      aiTools: signup.aiTools ?? [],
+      source: signup.source ?? "tydbase-waitlist",
+      createdAt: now,
+      updatedAt: now,
     });
-
-    if (!confirmRes.ok) {
-      const errBody = await confirmRes.text();
-      console.error(`[resend] Confirmation email failed (${confirmRes.status}): ${errBody}`);
-    }
-
-    if (notifyEmail) {
-      const notifyRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": `tydbase-waitlist-notify-${normalizedEmail}`,
-        },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: [notifyEmail],
-          subject: `New TydBase beta signup: ${normalizedEmail}`,
-          text: [
-            `Email: ${normalizedEmail}`,
-            `Source: ${payload.source ?? "tydbase.blivius.com"}`,
-            ...stackLines,
-          ].join("\n"),
-        }),
-        signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
-      });
-
-      if (!notifyRes.ok) {
-        const errBody = await notifyRes.text();
-        console.error(`[resend] Founder notify email failed (${notifyRes.status}): ${errBody}`);
-      }
-    }
   }
-
-  return { alreadyJoined, contactId };
+  await writeFile(filePath, JSON.stringify(entries, null, 2), "utf8");
+  return { alreadyJoined: existing !== undefined };
 }
 
+// ---- Handler ----------------------------------------------------------------------------------
 export async function POST(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const clientIp = forwarded?.split(",")[0]?.trim() || "local";
-
-  if (isRateLimited(clientIp)) {
+  if (isRateLimited(clientIp(request))) {
     return NextResponse.json(
       { ok: false, message: "Too many attempts. Wait a minute and try again." },
       { status: 429 }
@@ -228,45 +129,53 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ ok: false, message: "Invalid JSON request body." }, { status: 400 });
   }
-
   const parsed = waitlistSchema.safeParse(rawBody);
   if (!parsed.success) {
     const issueMessage = parsed.error.issues[0]?.message ?? "Please check your email address.";
     return NextResponse.json({ ok: false, message: issueMessage }, { status: 400 });
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const config = resendConfig();
+  if (!config && process.env.NODE_ENV === "production") {
+    // Fail closed: a production signup must never land in a file that disappears with the container.
+    console.error("[waitlist] RESEND_API_KEY is not set in production; refusing signups (503).");
+    return NextResponse.json(
+      { ok: false, message: "Signups are paused for a moment. Try again shortly." },
+      { status: 503 }
+    );
+  }
 
   try {
-    if (resendApiKey) {
-      const result = await saveResendWaitlistContact(resendApiKey, parsed.data);
+    if (config) {
+      warnOnPartialConfig(config);
+      const { alreadyJoined } = await joinWithResend(config, parsed.data);
       return NextResponse.json(
         {
           ok: true,
-          alreadyJoined: result.alreadyJoined,
+          alreadyJoined,
           provider: "resend",
-          message: result.alreadyJoined
+          message: alreadyJoined
             ? "You are already on the TydBase beta list."
             : "Thanks! Bet, you won't regret it 😎",
         },
-        { status: result.alreadyJoined ? 200 : 201 }
+        { status: alreadyJoined ? 200 : 201 }
       );
     }
 
-    const result = await upsertLocalEntry(parsed.data);
+    const { alreadyJoined } = await upsertLocalEntry(parsed.data);
     return NextResponse.json(
       {
         ok: true,
-        alreadyJoined: result.alreadyJoined,
+        alreadyJoined,
         provider: "local-dev",
-        message: result.alreadyJoined
+        message: alreadyJoined
           ? "Already saved on the local beta list. Preferences updated."
           : "Saved to the local beta waitlist.",
       },
-      { status: result.alreadyJoined ? 200 : 201 }
+      { status: alreadyJoined ? 200 : 201 }
     );
   } catch (err) {
-    console.error("Waitlist submission error:", err);
+    console.error(err instanceof Error ? err.message : err);
     return NextResponse.json(
       { ok: false, message: "Could not record your signup right now. Try again shortly." },
       { status: 500 }
