@@ -1,0 +1,14 @@
+services:
+  site:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/site.Dockerfile
+    image: tydbase-site:local
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - LOOPS_API_KEY=${LOOPS_API_KEY:-}
+      - LOOPS_MAILING_LIST_ID=${LOOPS_MAILING_LIST_ID:-}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://tydbase.blivius.com}
+    restart: unless-stopped

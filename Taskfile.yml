@@ -41,10 +41,21 @@ tasks:
     cmds:
       - bun run build
 
+  test:
+    desc: Run automated Bun unit and API tests
+    cmds:
+      - bun run test
+
+  docker:site:
+    desc: Build and start apps/site inside Docker Compose
+    cmds:
+      - docker compose -f deploy/compose/site.compose.yml up --build
+
   check:
-    desc: Run lint, formatting check, typecheck, and build
+    desc: Run lint, formatting check, typecheck, tests, and build
     cmds:
       - task: lint
       - task: fmt:check
       - task: typecheck
+      - task: test
       - task: build
