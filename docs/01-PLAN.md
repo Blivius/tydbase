@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅ · M0.5-b ✅ · M0.5-c ✅ · M0.5-d ✅)**
+Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅ · M0.5-b ✅ · M0.5-c ✅ · M0.5-d ✅ · M0.5-e ✅)**
 
 ---
 
@@ -49,7 +49,7 @@ a live waitlist.
 | M0.5-b `engine/` rename + modular skeleton | `backend/` → `engine/`; `internal/engine` → `internal/driver`; `internal/app` composition root + `boundaries_test.go`; `internal/platform` (config, httpx); `server --modules=`; all paths updated. `engine/tools/go.mod` for sqlc moves to P1 · M1 (no sqlc query exists yet) |
 | M0.5-c Hooks + hygiene | husky pre-commit (lint-staged), pre-push, post-merge; `.editorconfig`; `SECURITY.md`; `CONTRIBUTING.md`; PR + issue templates; root `.env.example`; README rewritten to the truth; `.gitignore` additions |
 | M0.5-d Docker | `docker/`: `Dockerfile`, `Dockerfile.site`, `compose.yml`, `compose.dev.yml`, `compose.dbs.yml`, `dbs/seed/*`, `README.md`; delete `deploy/`. Pulled forward from M0.5-e because the image needs them: `tydbase healthcheck` and ldflags version stamping |
-| M0.5-e Engine polish | Scalar docs; catalog accuracy + `catalog_test.go` (actionable 404 detail already shipped in M0.5-b) |
+| M0.5-e Engine polish | Scalar docs, themed with TydBase tokens; vendor toolbar, AI agent and telemetry off; catalog accuracy + `catalog_test.go` (actionable 404 detail already shipped in M0.5-b). Follow-up for P3: `TYDBASE_PUBLIC_URL` → OpenAPI `servers` so Scalar's curl samples carry a host |
 | M0.5-f Waitlist + site basics | Resend errors become actionable server logs (`restricted_api_key` → "needs a Full access key"); warn at startup when `RESEND_NOTIFY_EMAIL` is set without `RESEND_FROM_EMAIL` (no email is sent); `tyd-*` classes into `@layer components` (mobile nav fix); clear the 16 type-aware oxlint warnings (`res.json() as T` → zod parse, real `PGlite` type); fail-closed 503; `x-real-ip` + pruning; 8s timeouts + `allSettled`; Resend API shape verified; tests. OG image, robots, sitemap, `/privacy`, security headers, `not-found` |
 | M0.5-g Ship | Full Docker + Chrome pass; Moeen pushes; CI + security green; Vercel deploy + prod smoke |
 
