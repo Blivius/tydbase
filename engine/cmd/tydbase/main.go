@@ -54,10 +54,10 @@ func run(args []string, stdout, stderr io.Writer) error {
 		_, err := fmt.Fprintln(stdout, "tydbase start (local-first workspace + embedded SQLite) ships in Phase 1.")
 		return err
 	case "agent":
-		_, err := fmt.Fprintln(stdout, "tydbase agent (outbound WSS/mTLS VPC & localhost relay) ships in Phase 2.")
+		_, err := fmt.Fprintln(stdout, "tydbase agent (outbound relay for private and localhost databases) ships in Phase 6.")
 		return err
 	case "mcp":
-		_, err := fmt.Fprintln(stdout, "tydbase mcp (Streamable HTTP + local stdio governed MCP bridge) ships in Phase 3.")
+		_, err := fmt.Fprintln(stdout, "tydbase mcp (local stdio governed MCP) ships in Phase 2.")
 		return err
 	default:
 		printUsage(stderr)
@@ -109,6 +109,22 @@ func runServer(args []string, stderr io.Writer) error {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(stderr, nil))
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Fail fast: a server that can't read its metadata or decrypt its secrets must not go healthy.
+	platform, err := app.OpenPlatform(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := platform.Close(); err != nil {
+			logger.Error("close metadata db", "err", err)
+		}
+	}()
+	logger.Info("metadata store ready", "dataDir", cfg.DataDir)
+
 	router, _ := app.New(cfg, mods)
 
 	srv := &http.Server{
@@ -119,9 +135,6 @@ func runServer(args []string, stderr io.Writer) error {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -181,6 +194,6 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "  version   Print CLI version and Go runtime")
 	fmt.Fprintln(w, "  healthcheck  Exit 0 if the local server's /api/v1/health answers 200 (--url)")
 	fmt.Fprintln(w, "  start     Launch local-first workspace (Phase 1)")
-	fmt.Fprintln(w, "  agent     Run outbound private VPC / localhost relay (Phase 2)")
-	fmt.Fprintln(w, "  mcp       Run local stdio MCP bridge or client installer (Phase 3)")
+	fmt.Fprintln(w, "  agent     Run outbound relay for private databases (Phase 6)")
+	fmt.Fprintln(w, "  mcp       Run local stdio MCP for AI clients (Phase 2)")
 }
