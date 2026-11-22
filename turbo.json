@@ -3,8 +3,10 @@
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
-    "LOOPS_API_KEY",
-    "LOOPS_MAILING_LIST_ID",
+    "RESEND_API_KEY",
+    "RESEND_AUDIENCE_ID",
+    "RESEND_FROM_EMAIL",
+    "RESEND_NOTIFY_EMAIL",
     "NEXT_PUBLIC_SITE_URL"
   ],
   "tasks": {

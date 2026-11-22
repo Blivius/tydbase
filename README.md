@@ -6,7 +6,7 @@ Self-host every feature for $0 forever under Apache-2.0, or use managed TydBase 
 
 ## Monorepo Layout
 
-- `apps/site`: Landing page, interactive browser PostgreSQL sandbox (`PGlite`), MCP guardrail simulator, `/demo` teaser mode, and Loops.so beta waitlist (`tydbase.blivius.com`).
+- `apps/site`: Landing page, interactive browser PostgreSQL sandbox (`PGlite`), MCP guardrail simulator, `/demo` teaser mode, and Resend beta waitlist (`tydbase.blivius.com`).
 - `packages/ui`: Shared dark-first design tokens, components, and brand/database vector marks.
 - `packages/wasm-playground`: Client-side PostgreSQL WebAssembly engine (`@electric-sql/pglite`) with seeded datasets.
 - `packages/config`: Shared TypeScript configuration.

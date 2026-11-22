@@ -22,6 +22,7 @@ interface LocalWaitlistEntry {
   updatedAt: string;
 }
 
+const RESEND_TIMEOUT_MS = 30_000;
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_REQUESTS = 10;
 const ipHits = new Map<string, number[]>();
@@ -96,67 +97,118 @@ async function upsertLocalEntry(
   return { alreadyJoined: false };
 }
 
-async function upsertLoopsContact(
+async function saveResendWaitlistContact(
   apiKey: string,
   payload: z.infer<typeof waitlistSchema>
-): Promise<{ alreadyJoined: boolean }> {
+): Promise<{ alreadyJoined: boolean; contactId?: string }> {
   const normalizedEmail = payload.email.toLowerCase();
-  const mailingListId = process.env.LOOPS_MAILING_LIST_ID?.trim();
+  const audienceId = process.env.RESEND_AUDIENCE_ID?.trim();
+  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+  const notifyEmail = process.env.RESEND_NOTIFY_EMAIL?.trim();
 
-  const body: Record<string, unknown> = {
-    email: normalizedEmail,
-    source: payload.source ?? "tydbase.blivius.com",
-    userGroup: "beta-waitlist",
-    subscribed: true,
-  };
+  const endpoint = audienceId
+    ? `https://api.resend.com/audiences/${encodeURIComponent(audienceId)}/contacts`
+    : "https://api.resend.com/contacts";
 
-  if (payload.role) {
-    body.role = payload.role;
-  }
-  if (payload.databases && payload.databases.length > 0) {
-    body.databases = payload.databases.join(", ");
-  }
-  if (payload.aiTools && payload.aiTools.length > 0) {
-    body.aiTools = payload.aiTools.join(", ");
-  }
-  if (mailingListId) {
-    body.mailingLists = { [mailingListId]: true };
-  }
-
-  // First try create so we can tell new signups apart from returning contacts cleanly.
-  const createRes = await fetch("https://app.loops.so/api/v1/contacts/create", {
+  const contactRes = await fetch(endpoint, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      email: normalizedEmail,
+      first_name: payload.role?.slice(0, 60) || undefined,
+      unsubscribed: false,
+    }),
+    signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
   });
 
-  if (createRes.ok) {
-    return { alreadyJoined: false };
+  let alreadyJoined = false;
+  let contactId: string | undefined;
+
+  if (contactRes.ok) {
+    const data = (await contactRes.json()) as { id?: string };
+    contactId = data.id;
+  } else if (contactRes.status === 409) {
+    alreadyJoined = true;
+  } else {
+    const errBody = await contactRes.text();
+    throw new Error(`Resend contact error (${contactRes.status}): ${errBody}`);
   }
 
-  // 409 means contact already exists in Loops -> upsert their stack preferences.
-  if (createRes.status === 409) {
-    const updateRes = await fetch("https://app.loops.so/api/v1/contacts/update", {
-      method: "PUT",
+  // Send a concise beta confirmation email when a verified sender address is configured.
+  if (fromEmail && !alreadyJoined) {
+    const stackLines = [
+      payload.role ? `Role: ${payload.role}` : null,
+      payload.databases && payload.databases.length > 0
+        ? `Databases: ${payload.databases.join(", ")}`
+        : null,
+      payload.aiTools && payload.aiTools.length > 0
+        ? `AI clients: ${payload.aiTools.join(", ")}`
+        : null,
+    ].filter(Boolean);
+
+    const confirmText = [
+      "You are on the TydBase private beta waitlist.",
+      "",
+      "We are onboarding early teams in batches at tydbase.blivius.com and prioritizing the database engines and MCP workflows requested most.",
+      ...(stackLines.length > 0 ? ["", ...stackLines] : []),
+      "",
+      "Self-hosted TydBase stays Apache-2.0 and free forever.",
+      "TydBase / Blivius HQ",
+    ].join("\n");
+
+    const confirmRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": `tydbase-waitlist-${normalizedEmail}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [normalizedEmail],
+        subject: "You are on the TydBase private beta list",
+        text: confirmText,
+      }),
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
     });
 
-    if (!updateRes.ok) {
-      const errText = await updateRes.text();
-      throw new Error(`Loops update failed (${updateRes.status}): ${errText}`);
+    if (!confirmRes.ok) {
+      const errBody = await confirmRes.text();
+      console.error(`[resend] Confirmation email failed (${confirmRes.status}): ${errBody}`);
     }
-    return { alreadyJoined: true };
+
+    if (notifyEmail) {
+      const notifyRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `tydbase-waitlist-notify-${normalizedEmail}`,
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [notifyEmail],
+          subject: `New TydBase beta signup: ${normalizedEmail}`,
+          text: [
+            `Email: ${normalizedEmail}`,
+            `Source: ${payload.source ?? "tydbase.blivius.com"}`,
+            ...stackLines,
+          ].join("\n"),
+        }),
+        signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
+      });
+
+      if (!notifyRes.ok) {
+        const errBody = await notifyRes.text();
+        console.error(`[resend] Founder notify email failed (${notifyRes.status}): ${errBody}`);
+      }
+    }
   }
 
-  const errText = await createRes.text();
-  throw new Error(`Loops create failed (${createRes.status}): ${errText}`);
+  return { alreadyJoined, contactId };
 }
 
 export async function POST(request: Request) {
@@ -183,18 +235,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: issueMessage }, { status: 400 });
   }
 
-  const loopsApiKey = process.env.LOOPS_API_KEY?.trim();
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
 
   try {
-    if (loopsApiKey) {
-      const result = await upsertLoopsContact(loopsApiKey, parsed.data);
+    if (resendApiKey) {
+      const result = await saveResendWaitlistContact(resendApiKey, parsed.data);
       return NextResponse.json(
         {
           ok: true,
           alreadyJoined: result.alreadyJoined,
-          provider: "loops",
+          provider: "resend",
           message: result.alreadyJoined
-            ? "You are already on the beta list. Your preferences were updated."
+            ? "You are already on the TydBase beta list."
             : "Added to the TydBase private beta waitlist.",
         },
         { status: result.alreadyJoined ? 200 : 201 }

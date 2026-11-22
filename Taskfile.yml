@@ -47,9 +47,9 @@ tasks:
       - bun run test
 
   docker:site:
-    desc: Build and start apps/site inside Docker Compose
+    desc: Build and start apps/site detached inside Docker Compose
     cmds:
-      - docker compose -f deploy/compose/site.compose.yml up --build
+      - docker compose -f deploy/compose/site.compose.yml up -d --build
 
   check:
     desc: Run lint, formatting check, typecheck, tests, and build

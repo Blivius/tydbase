@@ -4,18 +4,31 @@ import path from "node:path";
 import { POST } from "./route";
 
 const localStoreFile = path.join(process.cwd(), ".waitlist-dev.json");
-const originalLoopsKey = process.env.LOOPS_API_KEY;
+const savedEnv = {
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_AUDIENCE_ID: process.env.RESEND_AUDIENCE_ID,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+  RESEND_NOTIFY_EMAIL: process.env.RESEND_NOTIFY_EMAIL,
+};
 const originalFetch = globalThis.fetch;
+
+function restoreEnvKey(key: keyof typeof savedEnv) {
+  const val = savedEnv[key];
+  if (val === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = val;
+  }
+}
 
 afterEach(() => {
   if (existsSync(localStoreFile)) {
     rmSync(localStoreFile, { force: true });
   }
-  if (originalLoopsKey === undefined) {
-    delete process.env.LOOPS_API_KEY;
-  } else {
-    process.env.LOOPS_API_KEY = originalLoopsKey;
-  }
+  restoreEnvKey("RESEND_API_KEY");
+  restoreEnvKey("RESEND_AUDIENCE_ID");
+  restoreEnvKey("RESEND_FROM_EMAIL");
+  restoreEnvKey("RESEND_NOTIFY_EMAIL");
   globalThis.fetch = originalFetch;
 });
 
@@ -32,7 +45,7 @@ function makeJsonRequest(body: unknown, ip = "198.51.100.1"): Request {
 
 describe("POST /api/waitlist", () => {
   test("rejects malformed email with 400", async () => {
-    delete process.env.LOOPS_API_KEY;
+    delete process.env.RESEND_API_KEY;
     const res = await POST(makeJsonRequest({ email: "not-an-email" }, "198.51.100.11"));
     expect(res.status).toBe(400);
     const data = (await res.json()) as { ok: boolean };
@@ -40,7 +53,7 @@ describe("POST /api/waitlist", () => {
   });
 
   test("creates new entry (201) and updates duplicate entry (200) in local dev fallback", async () => {
-    delete process.env.LOOPS_API_KEY;
+    delete process.env.RESEND_API_KEY;
 
     const first = await POST(
       makeJsonRequest(
@@ -72,21 +85,24 @@ describe("POST /api/waitlist", () => {
     expect(dupJson.alreadyJoined).toBe(true);
   });
 
-  test("uses Loops.so create and falls back to update on 409 conflict", async () => {
-    process.env.LOOPS_API_KEY = "test_loops_secret_key";
-    const calls: Array<{ url: string; method: string }> = [];
+  test("adds contact to Resend audience and sends idempotent confirmation email", async () => {
+    process.env.RESEND_API_KEY = "re_test_secret_key";
+    process.env.RESEND_AUDIENCE_ID = "aud_tydbase_beta";
+    process.env.RESEND_FROM_EMAIL = "TydBase <beta@blivius.com>";
+    delete process.env.RESEND_NOTIFY_EMAIL;
+
+    const calls: Array<{ url: string; method: string; idempotencyKey: string | null }> = [];
 
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
       const method = init?.method ?? "GET";
-      calls.push({ url, method });
+      const headers = new Headers(init?.headers);
+      calls.push({ url, method, idempotencyKey: headers.get("Idempotency-Key") });
 
-      if (url.endsWith("/contacts/create")) {
-        return new Response(JSON.stringify({ message: "Email already in audience" }), {
-          status: 409,
-        });
+      if (url.includes("/contacts")) {
+        return new Response(JSON.stringify({ object: "contact", id: "cnt_999" }), { status: 201 });
       }
-      return new Response(JSON.stringify({ success: true, id: "cnt_123" }), { status: 200 });
+      return new Response(JSON.stringify({ id: "email_999" }), { status: 200 });
     }) as typeof fetch;
 
     const res = await POST(
@@ -96,14 +112,43 @@ describe("POST /api/waitlist", () => {
       )
     );
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const json = (await res.json()) as { ok: boolean; provider: string; alreadyJoined: boolean };
     expect(json.ok).toBe(true);
-    expect(json.provider).toBe("loops");
-    expect(json.alreadyJoined).toBe(true);
+    expect(json.provider).toBe("resend");
+    expect(json.alreadyJoined).toBe(false);
     expect(calls).toEqual([
-      { url: "https://app.loops.so/api/v1/contacts/create", method: "POST" },
-      { url: "https://app.loops.so/api/v1/contacts/update", method: "PUT" },
+      {
+        url: "https://api.resend.com/audiences/aud_tydbase_beta/contacts",
+        method: "POST",
+        idempotencyKey: null,
+      },
+      {
+        url: "https://api.resend.com/emails",
+        method: "POST",
+        idempotencyKey: "tydbase-waitlist-team@kestrelpay.io",
+      },
     ]);
+  });
+
+  test("handles Resend 409 duplicate contact gracefully without resending email", async () => {
+    process.env.RESEND_API_KEY = "re_test_secret_key";
+    delete process.env.RESEND_AUDIENCE_ID;
+    process.env.RESEND_FROM_EMAIL = "TydBase <beta@blivius.com>";
+
+    const calls: string[] = [];
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input.toString();
+      calls.push(url);
+      return new Response(JSON.stringify({ message: "Contact already exists" }), { status: 409 });
+    }) as typeof fetch;
+
+    const res = await POST(makeJsonRequest({ email: "repeat@kestrelpay.io" }, "198.51.100.15"));
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { ok: boolean; alreadyJoined: boolean; provider: string };
+    expect(json.ok).toBe(true);
+    expect(json.alreadyJoined).toBe(true);
+    expect(json.provider).toBe("resend");
+    expect(calls).toEqual(["https://api.resend.com/contacts"]);
   });
 });
