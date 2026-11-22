@@ -20,6 +20,8 @@ import (
 	"github.com/tydbase/tydbase/engine/internal/platform/config"
 )
 
+// version is stamped at build time: -ldflags "-X main.version=<git describe>".
+// The default keeps `tydbase openapi` (and so the committed spec) stable.
 var version = "0.1.0"
 
 func main() {
@@ -42,6 +44,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 	case "version":
 		_, err := fmt.Fprintf(stdout, "tydbase %s (%s %s/%s)\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		return err
+	case "healthcheck":
+		return runHealthcheck(args[1:], stderr)
 	case "openapi":
 		return runOpenAPI(args[1:], stdout, stderr)
 	case "server":
@@ -138,6 +142,33 @@ func runServer(args []string, stderr io.Writer) error {
 	}
 }
 
+// runHealthcheck exits non-zero unless the local server answers /api/v1/health with 200.
+// It exists because the distroless image has no shell, curl or wget for a Docker HEALTHCHECK.
+func runHealthcheck(args []string, stderr io.Writer) error {
+	fs := flag.NewFlagSet("healthcheck", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	url := fs.String("url", "http://127.0.0.1:"+config.Load(version).Port+"/api/v1/health", "Health endpoint to probe")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *url, nil)
+	if err != nil {
+		return fmt.Errorf("healthcheck: bad --url %q: %w", *url, err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("healthcheck: %s unreachable: %w (is `tydbase server` running on that port?)", *url, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("healthcheck: %s returned %d, want 200", *url, resp.StatusCode)
+	}
+	return nil
+}
+
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "TydBase — Open-source multiplayer database workspace & governed MCP control plane")
 	fmt.Fprintln(w, "")
@@ -148,6 +179,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "  server    Start the HTTP API (--port, --modules=all|"+strings.Join(app.ModuleNames(), ",")+")")
 	fmt.Fprintln(w, "  openapi   Export the OpenAPI 3.1 JSON specification")
 	fmt.Fprintln(w, "  version   Print CLI version and Go runtime")
+	fmt.Fprintln(w, "  healthcheck  Exit 0 if the local server's /api/v1/health answers 200 (--url)")
 	fmt.Fprintln(w, "  start     Launch local-first workspace (Phase 1)")
 	fmt.Fprintln(w, "  agent     Run outbound private VPC / localhost relay (Phase 2)")
 	fmt.Fprintln(w, "  mcp       Run local stdio MCP bridge or client installer (Phase 3)")
