@@ -36,21 +36,22 @@ tasks:
       - bun run sdk:gen
 
   lint:
-    desc: Run oxlint across JS/TS workspaces and go vet on backend
+    desc: Run type-aware oxlint on JS/TS and golangci-lint on the engine
     cmds:
       - bun run lint
-      - cd backend && go vet ./...
+      - cd backend && golangci-lint run ./...
 
   fmt:
-    desc: Format workspace code with oxfmt and gofmt
+    desc: Format workspace code with oxfmt and the engine with gofmt + goimports
     cmds:
       - bun run fmt
-      - cd backend && gofmt -w .
+      - cd backend && golangci-lint fmt ./...
 
   fmt:check:
-    desc: Check formatting with oxfmt
+    desc: Check formatting with oxfmt and gofmt
     cmds:
       - bun run fmt:check
+      - cd backend && test -z "$(gofmt -l .)"
 
   typecheck:
     desc: Run TypeScript type checks across all packages
@@ -68,6 +69,7 @@ tasks:
     cmds:
       - bun run test
       - cd backend && go test -race ./...
+      - cd backend && go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
   docker:site:
     desc: Build and start apps/site detached inside Docker Compose

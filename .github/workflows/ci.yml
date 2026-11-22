@@ -6,65 +6,85 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
+    name: Engine (Go)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version-file: "backend/go.mod"
+          persist-credentials: false
 
-      - name: Vet
-        run: go vet ./...
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; echo "Run 'task fmt' and commit the result." >&2; exit 1; }
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: backend
 
       - name: Test
-        run: go test -race -v ./...
+        run: go test -race ./...
 
       - name: Build CLI
-        run: go build ./cmd/tydbase
+        run: go build -trimpath ./cmd/tydbase
 
-      - name: Verify OpenAPI spec is up to date
+      - name: OpenAPI spec is current
         run: |
-          go run ./cmd/tydbase openapi --out /tmp/openapi.json
-          diff -u openapi.json /tmp/openapi.json
+          go run ./cmd/tydbase openapi --out "$RUNNER_TEMP/openapi.json"
+          diff -u openapi.json "$RUNNER_TEMP/openapi.json" || { echo "Run 'task sdk:gen' and commit the result." >&2; exit 1; }
 
   web:
+    name: Web (Bun)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 26.13.1
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version-file: ".nvmrc"
+          persist-credentials: false
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          bun-version: "1.4.4"
+          node-version-file: .nvmrc
 
-      - name: Install dependencies
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Lint (oxlint)
+      - name: Lint (oxlint, type-aware)
         run: bun run lint
 
-      - name: Format check (oxfmt)
+      - name: Format (oxfmt)
         run: bun run fmt:check
 
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Test (bun test)
+      - name: Test
         run: bun run test
+
+      - name: SDK is generated from the committed spec
+        run: |
+          bun run sdk:gen
+          git diff --exit-code packages/sdk/src/schema.d.ts || { echo "Run 'task sdk:gen' and commit the result." >&2; exit 1; }
 
       - name: Build
         run: bun run build

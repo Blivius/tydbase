@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+# Vendored agent skills (.claude/skills, pinned in skills-lock.json) quote fake credentials
+# as "don't do this" examples. Nothing executable or deployed lives there.
+[[allowlists]]
+description = "Third-party skill docs with illustrative fake secrets"
+paths = ['''^\.claude/skills/''']
