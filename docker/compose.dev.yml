@@ -1,0 +1,31 @@
+# Local development overrides. Always layered on compose.yml:
+#   docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
+#
+#   Engine:  http://localhost:8080   (API docs: /docs)
+#   Site:    http://localhost:3000   (reads apps/site/.env when present, e.g. RESEND_API_KEY)
+#
+# Target databases are a separate stack (compose.dbs.yml). From inside a container, reach them
+# through host.docker.internal on their published ports.
+
+services:
+  engine:
+    environment:
+      TYDBASE_ENV: development
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  site:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.site
+    image: tydbase/site:local
+    container_name: tydbase-site
+    env_file:
+      - path: ../apps/site/.env
+        required: false
+    environment:
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    networks: [tydbase]
+    restart: unless-stopped

@@ -1,0 +1,30 @@
+# Self-hosted TydBase: the engine (API now; embedded web app from P1).
+#   docker compose -f docker/compose.yml up -d --build
+# Local development adds compose.dev.yml (ports, dev env, the marketing site).
+
+name: tydbase
+
+services:
+  engine:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VERSION: ${TYDBASE_VERSION:-0.1.0}
+    image: tydbase/engine:${TYDBASE_VERSION:-local}
+    container_name: tydbase-engine
+    command: ["server", "--modules=${TYDBASE_MODULES:-all}"]
+    environment:
+      TYDBASE_ENV: ${TYDBASE_ENV:-production}
+      TYDBASE_CORS_ORIGIN: ${TYDBASE_CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "${TYDBASE_PORT:-8080}:8080"
+    networks: [tydbase]
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+networks:
+  tydbase:
+    name: tydbase-net

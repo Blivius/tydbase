@@ -1,0 +1,119 @@
+# Disposable, seeded target databases for driver work (P1+). Its own project, so it can run with
+# or without the engine stack.
+#   docker compose -f docker/compose.dbs.yml up -d                  # core engines
+#   docker compose -f docker/compose.dbs.yml --profile mssql up -d  # + SQL Server
+#   docker compose -f docker/compose.dbs.yml down -v                # wipe (seeds re-run next up)
+#
+# Every engine uses user `tydbase` / password `tydbase_dev_password` and database `tydbase_dev`
+# (MSSQL: `sa` / `TydbaseDevPassword1!`). Dev-only credentials; never reuse them.
+
+name: tydbase-dbs
+
+x-healthcheck: &hc
+  interval: 5s
+  timeout: 5s
+  retries: 20
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: tydbase-db-postgres
+    environment:
+      POSTGRES_USER: tydbase
+      POSTGRES_PASSWORD: tydbase_dev_password
+      POSTGRES_DB: tydbase_dev
+    ports: ["5433:5432"]
+    volumes:
+      - ./dbs/seed/postgres.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "pg_isready -U tydbase -d tydbase_dev"]
+
+  mysql:
+    image: mysql:8.4
+    container_name: tydbase-db-mysql
+    environment: &mysql-env
+      MYSQL_ROOT_PASSWORD: tydbase_dev_password
+      MYSQL_DATABASE: tydbase_dev
+      MYSQL_USER: tydbase
+      MYSQL_PASSWORD: tydbase_dev_password
+    ports: ["3307:3306"]
+    volumes:
+      - ./dbs/seed/mysql.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-utydbase", "-ptydbase_dev_password"]
+
+  mariadb:
+    image: mariadb:11.8
+    container_name: tydbase-db-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: tydbase_dev_password
+      MARIADB_DATABASE: tydbase_dev
+      MARIADB_USER: tydbase
+      MARIADB_PASSWORD: tydbase_dev_password
+    ports: ["3308:3306"]
+    volumes:
+      - ./dbs/seed/mysql.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+
+  mongodb:
+    image: mongo:8
+    container_name: tydbase-db-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tydbase
+      MONGO_INITDB_ROOT_PASSWORD: tydbase_dev_password
+      MONGO_INITDB_DATABASE: tydbase_dev
+    ports: ["27018:27017"]
+    volumes:
+      - ./dbs/seed/mongo.js:/docker-entrypoint-initdb.d/01-seed.js:ro
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: tydbase-db-redis
+    command: ["redis-server", "--requirepass", "tydbase_dev_password"]
+    ports: ["6380:6379"]
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "redis-cli", "-a", "tydbase_dev_password", "--no-auth-warning", "ping"]
+
+  # Redis has no init-script hook: a one-shot container loads the seed, then exits 0.
+  redis-seed:
+    image: redis:7-alpine
+    container_name: tydbase-db-redis-seed
+    depends_on:
+      redis: { condition: service_healthy }
+    volumes:
+      - ./dbs/seed/redis.txt:/seed/redis.txt:ro
+    entrypoint: ["sh", "-c", "redis-cli -h redis -a tydbase_dev_password --no-auth-warning < /seed/redis.txt"]
+    restart: "no"
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tydbase-db-mssql
+    profiles: ["mssql"]
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "TydbaseDevPassword1!"
+    ports: ["1434:1433"]
+    healthcheck:
+      <<: *hc
+      retries: 40
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'TydbaseDevPassword1!' -Q 'SELECT 1' -b -o /dev/null"]
+
+  # SQL Server has no init-script hook either.
+  mssql-seed:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tydbase-db-mssql-seed
+    profiles: ["mssql"]
+    depends_on:
+      mssql: { condition: service_healthy }
+    volumes:
+      - ./dbs/seed/mssql.sql:/seed/mssql.sql:ro
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "mssql", "-U", "sa", "-P", "TydbaseDevPassword1!", "-b", "-i", "/seed/mssql.sql"]
+    restart: "no"

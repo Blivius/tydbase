@@ -1,0 +1,11 @@
+SET workspace:northstar-labs:plan cloud-pro
+SET workspace:kestrel-pay:plan cloud-pro
+HSET mcp:session:claude-8f1 client claude-code workspace northstar-labs scopes read
+EXPIRE mcp:session:claude-8f1 2460
+HSET mcp:session:codex-3c9 client openai-codex workspace kestrel-pay scopes read
+EXPIRE mcp:session:codex-3c9 1140
+LPUSH audit:recent "select:members" "explain:query_events" "select:workspaces"
+SADD engines:enabled postgres mysql mariadb mongodb redis
+ZADD leaderboard:queries 412 checkout-latency 287 ledger-audit 534 semantic-matches
+XADD events:query * engine postgres duration_ms 18
+XADD events:query * engine redis duration_ms 2
