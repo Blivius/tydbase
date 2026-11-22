@@ -178,14 +178,12 @@ export function InteractivePlaygroundSection() {
     "pending"
   );
 
-  // Live 1-second TTL tick when Redis inspector is visible
   useEffect(() => {
     if (activeTab !== "nosql-vector" || paradigmView !== "redis") return;
     const id = window.setInterval(() => setTtlTick((t) => t + 1), 1000);
     return () => window.clearInterval(id);
   }, [activeTab, paradigmView]);
 
-  // Step-by-step animated MCP trace playback
   useEffect(() => {
     if (!isTracing) return;
     if (traceStep >= 4) {
@@ -194,7 +192,7 @@ export function InteractivePlaygroundSection() {
     }
     const timer = window.setTimeout(() => {
       setTraceStep((s) => s + 1);
-    }, 650);
+    }, 550);
     return () => window.clearTimeout(timer);
   }, [isTracing, traceStep]);
 
@@ -234,7 +232,7 @@ export function InteractivePlaygroundSection() {
       <div className="tyd-container flex flex-col gap-8">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-[56ch]">
-            <h2 className="tyd-section-head font-semibold text-ink">
+            <h2 className="tyd-section-head text-ink">
               Test the SQL engine and MCP guardrails right here.
             </h2>
             <p className="mt-3 text-lg leading-relaxed text-ink-secondary">
@@ -247,7 +245,7 @@ export function InteractivePlaygroundSection() {
           <div
             role="tablist"
             aria-label="Interactive playground views"
-            className="inline-flex flex-wrap gap-1.5 rounded-lg border border-line bg-surface-well p-1.5"
+            className="inline-flex flex-wrap border border-line-strong bg-surface-well"
           >
             {(
               [
@@ -255,7 +253,7 @@ export function InteractivePlaygroundSection() {
                 { id: "nosql-vector", label: "NoSQL & Vector" },
                 { id: "mcp", label: "MCP & AI Guardrails" },
               ] as const
-            ).map((tab) => {
+            ).map((tab, idx) => {
               const selected = activeTab === tab.id;
               return (
                 <button
@@ -264,7 +262,9 @@ export function InteractivePlaygroundSection() {
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`h-10 rounded-md px-4 text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`h-11 px-4 text-sm font-semibold whitespace-nowrap transition-colors ${
+                    idx > 0 ? "border-l border-line-strong" : ""
+                  } ${
                     selected
                       ? "bg-accent text-accent-ink"
                       : "text-ink-secondary hover:bg-surface-raised hover:text-ink"
@@ -339,7 +339,7 @@ export function InteractivePlaygroundSection() {
                       type="button"
                       onClick={() => void runQuery(sqlInput)}
                       disabled={status === "booting" || status === "running"}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-4 text-sm font-semibold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-4 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
                     >
                       <Play className="h-3.5 w-3.5" aria-hidden="true" />
                       {status === "booting"
@@ -362,7 +362,7 @@ export function InteractivePlaygroundSection() {
                     onKeyDown={handleEditorKeyDown}
                     rows={6}
                     spellCheck={false}
-                    className="w-full resize-y rounded-md border border-edge bg-surface-well p-4 font-mono text-sm leading-relaxed text-ink"
+                    className="w-full resize-y border border-edge bg-surface-well p-4 font-mono text-sm leading-relaxed text-ink"
                   />
                   <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
                     <span>
@@ -376,7 +376,7 @@ export function InteractivePlaygroundSection() {
                   {error ? (
                     <div
                       role="alert"
-                      className="rounded-md border border-danger/50 bg-danger-tint px-4 py-3 font-mono text-sm text-danger"
+                      className="border border-danger/50 bg-danger-tint px-4 py-3 font-mono text-sm text-danger"
                     >
                       {error}
                     </div>
@@ -512,7 +512,7 @@ export function InteractivePlaygroundSection() {
                         </div>
                       </div>
 
-                      <div className="rounded-md border border-line bg-surface-well px-4 py-3 text-sm text-ink">
+                      <div className="border border-line bg-surface-well px-4 py-3 text-sm text-ink">
                         <span className="text-ink-muted">Query vector: </span>
                         <code className="font-mono text-xs text-ink">
                           &quot;{VECTOR_QUERIES[vectorQuery].prompt}&quot;
@@ -536,7 +536,7 @@ export function InteractivePlaygroundSection() {
                                 {doc.title}
                               </div>
                               <div className="sm:col-span-3">
-                                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-well">
+                                <div className="h-2 w-full overflow-hidden bg-surface-well">
                                   <motion.div
                                     animate={{ scaleX: score }}
                                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
@@ -561,7 +561,7 @@ export function InteractivePlaygroundSection() {
                         Expand or collapse nested BSON nodes and inspect inferred schema fields
                         without leaving the browser.
                       </p>
-                      <pre className="overflow-x-auto rounded-md border border-line bg-surface-well p-4 font-mono text-sm leading-relaxed text-ink">
+                      <pre className="overflow-x-auto border border-line bg-surface-well p-4 font-mono text-sm leading-relaxed text-ink">
                         <code>
                           <div>{"{"}</div>
                           <div className="pl-4 text-ink-secondary">
@@ -720,7 +720,7 @@ export function InteractivePlaygroundSection() {
                     <button
                       type="button"
                       onClick={startAgentTrace}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-semibold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
                     >
                       <Play className="h-3.5 w-3.5" aria-hidden="true" />
                       Replay agent trace
@@ -744,7 +744,7 @@ export function InteractivePlaygroundSection() {
                   <div className="flex flex-col gap-4 p-5 lg:col-span-7">
                     <div>
                       <p className="text-xs font-medium text-ink-muted">One-command OAuth setup</p>
-                      <pre className="mt-2 overflow-x-auto rounded-md border border-line bg-surface-well px-3.5 py-2.5 font-mono text-xs text-accent">
+                      <pre className="mt-2 overflow-x-auto border border-line bg-surface-well px-3.5 py-2.5 font-mono text-xs text-accent">
                         <code>{activeMcp.command}</code>
                       </pre>
                     </div>
@@ -753,7 +753,7 @@ export function InteractivePlaygroundSection() {
                       <p className="text-xs font-medium text-ink-muted">
                         Live MCP pipeline ({activeMcp.clientId})
                       </p>
-                      <ol className="divide-y divide-line rounded-md border border-line bg-surface-well text-xs">
+                      <ol className="divide-y divide-line border border-line bg-surface-well text-xs">
                         {[
                           {
                             step: 1,
@@ -831,7 +831,7 @@ export function InteractivePlaygroundSection() {
                         TydBase runs a dry-run check and pauses execution until a teammate approves.
                       </p>
 
-                      <div className="mt-4 rounded-md border border-line bg-surface-well p-3.5 font-mono text-xs leading-relaxed text-ink">
+                      <div className="mt-4 border border-line bg-surface-well p-3.5 font-mono text-xs leading-relaxed text-ink">
                         <div className="mb-1.5 flex items-center gap-1.5 text-ink-muted">
                           <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>propose_mutation (production)</span>
@@ -872,7 +872,7 @@ export function InteractivePlaygroundSection() {
                             <button
                               type="button"
                               onClick={() => setMutationDecision("rejected")}
-                              className="inline-flex h-12 items-center justify-center rounded-md border border-danger/60 bg-danger-tint px-4 text-sm font-medium whitespace-nowrap text-danger transition-colors hover:border-danger"
+                              className="inline-flex h-12 items-center justify-center rounded-md border border-danger/60 bg-danger-tint px-4 text-sm font-semibold whitespace-nowrap text-danger transition-colors hover:border-danger"
                             >
                               Block write
                             </button>

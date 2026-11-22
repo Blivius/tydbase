@@ -8,16 +8,15 @@ const NAV_LINKS = [
   { href: "#playground", label: "Live sandbox" },
   { href: "#architecture", label: "Architecture" },
   { href: "#self-host", label: "Self-host" },
-  { href: "/demo", label: "Watch teaser" },
 ];
 
 export function Navbar() {
   return (
     <header
-      className="sticky top-0 w-full border-b border-line bg-ground/92 backdrop-blur-md"
+      className="sticky top-0 w-full border-b border-line bg-ground/95 backdrop-blur-md"
       style={{ zIndex: "var(--z-sticky-nav)", height: "var(--banner-height)" }}
     >
-      <div className="tyd-container flex h-full items-center justify-between gap-6">
+      <div className="tyd-container flex h-full items-stretch justify-between gap-6">
         <Link
           href="/"
           className="flex shrink-0 items-center text-ink transition-opacity hover:opacity-85"
@@ -26,19 +25,15 @@ export function Navbar() {
           <TydBaseLogo className="h-5 w-auto" />
         </Link>
 
-        <nav aria-label="Primary navigation" className="hidden items-center gap-7 md:flex">
+        <nav aria-label="Primary navigation" className="tyd-nav-rail hidden md:flex">
           {NAV_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap text-[0.9375rem] font-medium text-ink-secondary transition-colors hover:text-ink"
-            >
+            <Link key={item.href} href={item.href} className="tyd-nav-link">
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center">
           <Link href="#waitlist" className="tyd-btn-primary">
             Join beta
           </Link>

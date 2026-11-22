@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const schibstedGrotesk = Schibsted_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-space-grotesk",
-  display: "swap",
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plus-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-schibsted",
   display: "swap",
 });
 
@@ -52,10 +45,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${spaceGrotesk.variable} ${plusJakarta.variable} ${jetBrainsMono.variable}`}
-    >
+    <html lang="en" className={`${schibstedGrotesk.variable} ${jetBrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

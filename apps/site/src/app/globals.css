@@ -1,6 +1,6 @@
-/* Hallmark · custom · emerald-obsidian · job: waitlist · nav: single-row mark + section links + primary action · footer: compact single-row colophon · hero: split-stage */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, cut floating blurs, browser chrome bars, and eyebrow pills so live PGlite SQL execution, animated topology diagrams, and the MCP approval gate lead the page */
-/* Hallmark · waive 85 · the founder requested a pre-launch beta waitlist landing page for tydbase.blivius.com · collecting early beta signups via Loops.so is the primary job of this page */
+/* Hallmark · custom · emerald-obsidian sharp · job: waitlist · nav: segmented architectural rail + primary action · footer: compact single-row colophon · hero: split-stage */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, stripped rounded SaaS pills, soft blurs, and top-nav teaser links so sharp Schibsted Grotesk geometry, live PGlite SQL, and the MCP approval gate carry the page */
+/* Hallmark · waive 85 · the founder requested a pre-launch beta waitlist landing page for tydbase.blivius.com · collecting early beta signups via Resend is the primary job of this page */
 
 @import "tailwindcss";
 @import "@tydbase/ui/tokens.css";
@@ -101,24 +101,60 @@ select:focus-visible,
 
 .tyd-display {
   font-size: var(--text-hero);
-  line-height: 1.04;
-  letter-spacing: -0.025em;
+  font-weight: 800;
+  line-height: 0.99;
+  letter-spacing: -0.038em;
 }
 
 .tyd-section-head {
   font-size: var(--text-section);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
 }
 
 .tyd-title {
   font-size: var(--text-title);
-  line-height: 1.25;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .tyd-tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Segmented architectural header rail (Blivius HQ language) */
+.tyd-nav-rail {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
+.tyd-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-5);
+  border-right: 1px solid var(--color-border);
+  color: var(--color-ink-secondary);
+  font-size: var(--text-label);
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tyd-nav-link:last-child {
+  border-right: 0;
+}
+
+.tyd-nav-link:hover {
+  color: var(--color-ink);
+  background-color: var(--color-surface);
 }
 
 .tyd-btn-primary {
@@ -134,7 +170,7 @@ select:focus-visible,
   color: var(--color-accent-ink);
   font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -168,7 +204,7 @@ select:focus-visible,
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -217,8 +253,9 @@ select:focus-visible,
   cursor: not-allowed;
 }
 
+/* Sharp architectural plate */
 .tyd-panel {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-panel);

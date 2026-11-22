@@ -133,15 +133,15 @@ export function HeroSection() {
     >
       <div className="tyd-container grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
         <div className="flex flex-col gap-6 lg:col-span-6">
-          <h1 className="tyd-display font-semibold text-ink">One workspace for every database.</h1>
+          <h1 className="tyd-display text-ink">One workspace for every database.</h1>
 
-          <p className="max-w-[54ch] text-lg leading-relaxed text-ink-secondary">
+          <p className="max-w-[50ch] text-lg leading-relaxed text-ink-secondary">
             Query SQL, NoSQL, and vectors while governing Claude, Codex, and Gemini.
           </p>
 
           <form
             onSubmit={handleQuickSignup}
-            className="flex w-full max-w-xl flex-col gap-3 sm:flex-row"
+            className="flex w-full max-w-xl flex-col gap-2.5 sm:flex-row"
             noValidate
           >
             <label htmlFor="hero-waitlist-email" className="sr-only">
@@ -167,16 +167,14 @@ export function HeroSection() {
             </button>
           </form>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="#playground" className="tyd-btn-secondary">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/demo" className="tyd-btn-secondary">
               <Play className="h-4 w-4 text-accent" aria-hidden="true" />
-              Run live SQL in browser
+              Watch 60s teaser
             </Link>
-            <Link
-              href="/demo"
-              className="whitespace-nowrap text-[0.9375rem] font-medium text-ink-secondary underline decoration-line-strong underline-offset-4 transition-colors hover:text-ink"
-            >
-              Play interactive teaser
+            <Link href="#playground" className="tyd-btn-secondary">
+              <Terminal className="h-4 w-4 text-ink-secondary" aria-hidden="true" />
+              Run live SQL
             </Link>
           </div>
 
@@ -203,9 +201,9 @@ export function HeroSection() {
           onFocusCapture={() => setIsPaused(true)}
           onBlurCapture={() => setIsPaused(false)}
         >
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-surface-well px-4 py-3">
+          <div className="flex flex-wrap items-stretch justify-between border-b border-line bg-surface-well">
             <div
-              className="flex flex-wrap items-center gap-1.5"
+              className="flex flex-wrap items-stretch"
               role="tablist"
               aria-label="Engine preview"
             >
@@ -224,9 +222,9 @@ export function HeroSection() {
                       setApprovalState("pending");
                       setCycleKey((k) => k + 1);
                     }}
-                    className={`relative rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`border-r border-line px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors ${
                       isSelected
-                        ? "bg-accent-tint text-accent"
+                        ? "border-b-2 border-b-accent bg-surface text-accent"
                         : "text-ink-secondary hover:bg-surface-raised hover:text-ink"
                     }`}
                   >
@@ -238,7 +236,7 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => setIsPaused((prev) => !prev)}
-              className="rounded-md border border-line px-2.5 py-1 text-xs font-medium whitespace-nowrap text-ink-secondary transition-colors hover:border-line-strong hover:text-ink"
+              className="border-l border-line px-3.5 py-2 text-xs font-medium whitespace-nowrap text-ink-secondary transition-colors hover:bg-surface-raised hover:text-ink"
             >
               {isPaused ? "Resume cycle" : "Pause cycle"}
             </button>
@@ -264,7 +262,7 @@ export function HeroSection() {
               initial={{ opacity: 0.25, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0.25, y: -6 }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="divide-y divide-line"
             >
               <div className="bg-surface-well/65 px-5 py-4">
@@ -307,8 +305,8 @@ export function HeroSection() {
                         initial={{ opacity: 0.3, x: -6 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{
-                          duration: 0.22,
-                          delay: rowIdx * 0.06,
+                          duration: 0.2,
+                          delay: rowIdx * 0.05,
                           ease: [0.16, 1, 0.3, 1],
                         }}
                       >
@@ -326,7 +324,7 @@ export function HeroSection() {
                 </table>
               </div>
 
-              <div className="flex flex-col gap-3 bg-surface-raised/55 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 border-l-2 border-l-warn bg-surface-raised/55 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium text-ink">
                     {approvalState === "approved" ? (
@@ -355,7 +353,7 @@ export function HeroSection() {
                           setIsPaused(true);
                           setApprovalState("approved");
                         }}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-xs font-semibold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-xs font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden="true" />
                         Approve
@@ -366,7 +364,7 @@ export function HeroSection() {
                           setIsPaused(true);
                           setApprovalState("rejected");
                         }}
-                        className="inline-flex h-9 items-center rounded-md border border-danger/50 bg-danger-tint px-3 text-xs font-medium whitespace-nowrap text-danger transition-colors hover:border-danger"
+                        className="inline-flex h-9 items-center rounded-md border border-danger/60 bg-danger-tint px-3 text-xs font-semibold whitespace-nowrap text-danger transition-colors hover:border-danger"
                       >
                         Reject
                       </button>

@@ -88,7 +88,7 @@ export function ArchitectureSection() {
               y="26"
               width="250"
               height="138"
-              rx="10"
+              rx="0"
               fill="var(--color-surface-well)"
               stroke="var(--color-border-strong)"
             />
@@ -165,7 +165,7 @@ export function ArchitectureSection() {
               y="20"
               width="248"
               height="150"
-              rx="10"
+              rx="0"
               fill="var(--color-surface-raised)"
               stroke="var(--color-accent)"
             />
@@ -238,7 +238,7 @@ export function ArchitectureSection() {
               y="20"
               width="250"
               height="64"
-              rx="10"
+              rx="0"
               fill="var(--color-surface-well)"
               stroke="var(--color-border-strong)"
             />
@@ -268,7 +268,7 @@ export function ArchitectureSection() {
               y="106"
               width="250"
               height="64"
-              rx="10"
+              rx="0"
               fill="var(--color-surface-well)"
               stroke="var(--color-border-strong)"
             />
