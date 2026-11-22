@@ -1,0 +1,3 @@
+# Fast only. A slow pre-commit hook gets skipped with --no-verify, and a skipped hook checks
+# nothing. The full gate is pre-push and CI.
+bunx lint-staged

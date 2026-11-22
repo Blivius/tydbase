@@ -1,13 +1,8 @@
 {
   "name": "tydbase",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "license": "Apache-2.0",
-  "packageManager": "bun@1.4.4",
-  "engines": {
-    "node": ">=26.13.1",
-    "bun": ">=1.4.4"
-  },
   "workspaces": {
     "packages": [
       "apps/*",
@@ -40,10 +35,16 @@
     "@commitlint/config-conventional": "21.2.4",
     "@types/bun": "catalog:",
     "husky": "9.1.7",
+    "lint-staged": "17.6.1",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",
     "oxlint-tsgolint": "7.0.2007",
     "turbo": "2.11.13",
     "typescript": "catalog:"
-  }
+  },
+  "engines": {
+    "bun": ">=1.4.4",
+    "node": ">=26.13.1"
+  },
+  "packageManager": "bun@1.4.4"
 }

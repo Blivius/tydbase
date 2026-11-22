@@ -1,0 +1,7 @@
+# Git hooks don't load your shell's nvm; use the repo's Node (.nvmrc) when nvm is installed.
+[ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ] && . "${NVM_DIR:-$HOME/.nvm}/nvm.sh" && nvm use --silent >/dev/null 2>&1
+node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 26 ? 0 : 1)' || {
+  echo "pre-push: needs Node $(cat .nvmrc), found $(node -v). Run 'nvm use' and push again." >&2
+  exit 1
+}
+bun run typecheck && bun run lint && bun run test && (cd engine && go test -race -count=1 ./...)
