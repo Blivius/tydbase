@@ -1,4 +1,4 @@
-module github.com/tydbase/tydbase/backend
+module github.com/tydbase/tydbase/engine
 
 go 1.27
 

@@ -12,11 +12,12 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/tydbase/tydbase/backend/internal/api"
-	"github.com/tydbase/tydbase/backend/internal/config"
+	"github.com/tydbase/tydbase/engine/internal/app"
+	"github.com/tydbase/tydbase/engine/internal/platform/config"
 )
 
 var version = "0.1.0"
@@ -68,7 +69,7 @@ func runOpenAPI(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 
-	_, humaAPI := api.New(config.Load(version))
+	_, humaAPI := app.New(config.Load(version), app.ModuleNames())
 	data, err := json.MarshalIndent(humaAPI.OpenAPI(), "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal openapi spec: %w", err)
@@ -92,13 +93,19 @@ func runServer(args []string, stderr io.Writer) error {
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	port := fs.String("port", cfg.Port, "HTTP listen port")
+	modulesFlag := fs.String("modules", "all",
+		"Modules to mount: all, or a comma-separated subset of "+strings.Join(app.ModuleNames(), ","))
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	cfg.Port = *port
+	mods, err := app.ParseModules(*modulesFlag)
+	if err != nil {
+		return err
+	}
 
 	logger := slog.New(slog.NewJSONHandler(stderr, nil))
-	router, _ := api.New(cfg)
+	router, _ := app.New(cfg, mods)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
@@ -114,7 +121,7 @@ func runServer(args []string, stderr io.Writer) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("tydbase server listening", "port", cfg.Port, "env", cfg.Env, "version", cfg.Version)
+		logger.Info("tydbase server listening", "port", cfg.Port, "env", cfg.Env, "version", cfg.Version, "modules", mods)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -138,7 +145,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "  tydbase <command> [flags]")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "Commands:")
-	fmt.Fprintln(w, "  server    Start the HTTP API and OpenAPI server")
+	fmt.Fprintln(w, "  server    Start the HTTP API (--port, --modules=all|"+strings.Join(app.ModuleNames(), ",")+")")
 	fmt.Fprintln(w, "  openapi   Export the OpenAPI 3.1 JSON specification")
 	fmt.Fprintln(w, "  version   Print CLI version and Go runtime")
 	fmt.Fprintln(w, "  start     Launch local-first workspace (Phase 1)")

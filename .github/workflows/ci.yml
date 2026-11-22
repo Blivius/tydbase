@@ -14,12 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
+  engine:
     name: Engine (Go)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: engine
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -27,8 +27,8 @@ jobs:
 
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
+          go-version-file: engine/go.mod
+          cache-dependency-path: engine/go.sum
 
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; echo "Run 'task fmt' and commit the result." >&2; exit 1; }
@@ -37,10 +37,10 @@ jobs:
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.15.0
-          working-directory: backend
+          working-directory: engine
 
       - name: Test
-        run: go test -race ./...
+        run: go test -race -count=1 ./...
 
       - name: Build CLI
         run: go build -trimpath ./cmd/tydbase

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Config holds runtime configuration for the TydBase backend server.
+// Config holds runtime configuration for the TydBase engine server.
 type Config struct {
 	Port       string
 	Env        string

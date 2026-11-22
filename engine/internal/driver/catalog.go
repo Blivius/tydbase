@@ -1,4 +1,4 @@
-package engine
+package driver
 
 // Paradigm identifies one of TydBase's four unified database paradigms.
 type Paradigm string

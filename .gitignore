@@ -12,7 +12,7 @@ build/
 *.tsbuildinfo
 
 # Go outputs
-backend/bin/
+engine/bin/
 *.exe
 *.test
 *.out

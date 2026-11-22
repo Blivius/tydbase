@@ -8,6 +8,6 @@
 .env.*.local
 **/dist
 **/out
-backend/bin
+engine/bin
 *.log
 .DS_Store

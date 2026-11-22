@@ -8,7 +8,7 @@
     "./schema": "./src/schema.d.ts"
   },
   "scripts": {
-    "generate": "openapi-typescript ../../backend/openapi.json -o src/schema.d.ts",
+    "generate": "openapi-typescript ../../engine/openapi.json -o src/schema.d.ts && oxfmt --config ../../.oxfmtrc.json src/schema.d.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
