@@ -2,9 +2,10 @@ version: "3"
 
 tasks:
   install:
-    desc: Install JS/TS workspace dependencies with Bun
+    desc: Install JS/TS workspace dependencies with Bun and Go backend modules
     cmds:
       - bun install
+      - cd backend && go mod download
 
   dev:
     desc: Start all workspace dev servers via Turborepo
@@ -16,15 +17,35 @@ tasks:
     cmds:
       - bun run --filter @tydbase/site dev
 
+  dev:backend:
+    desc: Run the TydBase Go API server locally
+    dir: backend
+    cmds:
+      - go run ./cmd/tydbase server
+
+  openapi:
+    desc: Export Go Huma v2 OpenAPI 3.1 spec to backend/openapi.json
+    dir: backend
+    cmds:
+      - go run ./cmd/tydbase openapi --out ./openapi.json
+
+  sdk:gen:
+    desc: Regenerate @tydbase/sdk TypeScript schema from Go OpenAPI 3.1
+    deps: [openapi]
+    cmds:
+      - bun run sdk:gen
+
   lint:
-    desc: Run oxlint across the monorepo
+    desc: Run oxlint across JS/TS workspaces and go vet on backend
     cmds:
       - bun run lint
+      - cd backend && go vet ./...
 
   fmt:
-    desc: Format workspace code with oxfmt
+    desc: Format workspace code with oxfmt and gofmt
     cmds:
       - bun run fmt
+      - cd backend && gofmt -w .
 
   fmt:check:
     desc: Check formatting with oxfmt
@@ -37,19 +58,36 @@ tasks:
       - bun run typecheck
 
   build:
-    desc: Build all workspace apps and packages
+    desc: Build all workspace apps, packages, and Go CLI binary
     cmds:
       - bun run build
+      - cd backend && go build -o ./bin/tydbase ./cmd/tydbase
 
   test:
-    desc: Run automated Bun unit and API tests
+    desc: Run automated Bun and Go test suites
     cmds:
       - bun run test
+      - cd backend && go test -race ./...
 
   docker:site:
     desc: Build and start apps/site detached inside Docker Compose
     cmds:
       - docker compose -f deploy/compose/site.compose.yml up -d --build
+
+  docker:backend:
+    desc: Build and start Go backend API detached inside Docker Compose
+    cmds:
+      - docker compose -f deploy/compose/backend.compose.yml up -d --build
+
+  dev:dbs:
+    desc: Start disposable local Postgres (pgvector), MySQL, MariaDB, MongoDB, and Redis
+    cmds:
+      - docker compose -f deploy/compose/dev-dbs.yml up -d
+
+  dev:dbs:down:
+    desc: Stop and wipe disposable local dev databases
+    cmds:
+      - docker compose -f deploy/compose/dev-dbs.yml down -v
 
   check:
     desc: Run lint, formatting check, typecheck, tests, and build

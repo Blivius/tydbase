@@ -7,6 +7,34 @@ on:
     branches: [main]
 
 jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "backend/go.mod"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -v ./...
+
+      - name: Build CLI
+        run: go build ./cmd/tydbase
+
+      - name: Verify OpenAPI spec is up to date
+        run: |
+          go run ./cmd/tydbase openapi --out /tmp/openapi.json
+          diff -u openapi.json /tmp/openapi.json
+
   web:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +62,9 @@ jobs:
 
       - name: Typecheck
         run: bun run typecheck
+
+      - name: Test (bun test)
+        run: bun run test
 
       - name: Build
         run: bun run build

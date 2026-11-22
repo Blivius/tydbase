@@ -17,13 +17,18 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "bun test",
+    "sdk:gen": "bun run --cwd packages/sdk generate",
+    "prepare": "husky",
     "lint": "oxlint --config .oxlintrc.json apps packages",
     "fmt": "oxfmt --config .oxfmtrc.json --write apps packages",
     "fmt:check": "oxfmt --config .oxfmtrc.json --check apps packages",
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@types/bun": "latest",
+    "husky": "^9.1.7",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",
     "turbo": "2.11.13",
