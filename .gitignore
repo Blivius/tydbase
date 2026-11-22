@@ -36,3 +36,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Agent tooling state
+.remember/
+.playwright-mcp/
+graphify-out/
