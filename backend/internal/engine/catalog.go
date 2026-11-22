@@ -12,14 +12,14 @@ const (
 
 // Descriptor describes a supported TydBase engine driver and its capabilities.
 type Descriptor struct {
-	ID              string   `json:"id" doc:"Stable engine identifier (e.g. postgres, mongodb, redis)."`
-	Name            string   `json:"name" doc:"Human-readable database engine name."`
-	Paradigm        Paradigm `json:"paradigm" enum:"sql,document,kv,vector" doc:"Primary data paradigm."`
-	DefaultPort     int      `json:"defaultPort" doc:"Standard TCP port (0 for embedded/file engines)."`
-	SupportsRelay   bool     `json:"supportsRelay" doc:"Whether private VPC/localhost relay tunneling is supported."`
-	SupportsReadTx  bool     `json:"supportsReadTx" doc:"Whether read-only transactions are enforced natively."`
-	SupportsVector  bool     `json:"supportsVector" doc:"Whether native vector similarity indexing is supported."`
-	Status          string   `json:"status" enum:"tier1,planned" doc:"Driver implementation tier."`
+	ID             string   `json:"id" doc:"Stable engine identifier (e.g. postgres, mongodb, redis)."`
+	Name           string   `json:"name" doc:"Human-readable database engine name."`
+	Paradigm       Paradigm `json:"paradigm" enum:"sql,document,kv,vector" doc:"Primary data paradigm."`
+	DefaultPort    int      `json:"defaultPort" doc:"Standard TCP port (0 for embedded/file engines)."`
+	SupportsRelay  bool     `json:"supportsRelay" doc:"Whether private VPC/localhost relay tunneling is supported."`
+	SupportsReadTx bool     `json:"supportsReadTx" doc:"Whether read-only transactions are enforced natively."`
+	SupportsVector bool     `json:"supportsVector" doc:"Whether native vector similarity indexing is supported."`
+	Status         string   `json:"status" enum:"tier1,planned" doc:"Driver implementation tier."`
 }
 
 var catalog = []Descriptor{

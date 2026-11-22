@@ -76,7 +76,7 @@ func runOpenAPI(args []string, stdout, stderr io.Writer) error {
 	data = append(data, '\n')
 
 	if *outPath != "" {
-		if err := os.WriteFile(*outPath, data, 0o644); err != nil {
+		if err := os.WriteFile(*outPath, data, 0o644); err != nil { //nolint:gosec // committed public spec, world-readable on purpose
 			return fmt.Errorf("write openapi spec to %s: %w", *outPath, err)
 		}
 		return nil

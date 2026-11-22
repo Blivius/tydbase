@@ -10,6 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/tydbase/tydbase/backend/internal/config"
 	"github.com/tydbase/tydbase/backend/internal/engine"
 )
@@ -45,7 +46,6 @@ type EngineByIDOutput struct {
 func New(cfg config.Config) (chi.Router, huma.API) {
 	router := chi.NewMux()
 	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(30 * time.Second))
 	router.Use(corsMiddleware(cfg.CORSOrigin))
