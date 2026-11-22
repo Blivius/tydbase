@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅ · M0.5-b ✅)**
+Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅ · M0.5-b ✅ · M0.5-c ✅)**
 
 ---
 

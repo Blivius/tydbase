@@ -242,6 +242,9 @@ Animation and layout rules:
   page while the API keeps working.
 - **Vercel's filesystem is read-only.** The waitlist's JSON fallback is dev-only, and production
   without `RESEND_API_KEY` must fail with 503, not lose signups.
+- **Never run `lint-staged` (or the pre-commit hook) yourself.** It stages the files its tasks touch,
+  which breaks hard rule 1. To test the hook, run it in a throwaway repo under the scratchpad.
+  `engine/openapi.json` is excluded from oxfmt because CI diffs it byte-for-byte against Go's output.
 - **Project skills had `Bash(git:*)` stripped from their `allowed-tools`** so git stays behind a
   permission prompt. `bunx skills update` restores upstream files. Re-run
   `sed -i '' -E '/^allowed-tools:/ s/ Bash\(git:\*\)//' .claude/skills/*/SKILL.md` after any update.

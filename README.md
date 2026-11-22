@@ -1,35 +1,55 @@
 # TydBase
 
-One zero-install web workspace and governed MCP control plane for SQL, NoSQL, key-value, and vector databases.
+A database workspace and governed MCP gateway. Connect a database once: your team gets a browser
+workspace, and AI clients (Claude, Codex, Gemini, Cursor) get one MCP endpoint with read-only
+guards, an audit log and write approvals. Database passwords stay off laptops and out of
+`mcp.json`.
 
-Self-host every feature for $0 forever under Apache-2.0, or use managed TydBase Cloud at `app.tydbase.com` (early beta at `tydbase.blivius.com`).
+Self-hosting is free under Apache-2.0, with every feature included. Managed TydBase Cloud is how
+the project pays for itself.
 
-## Monorepo Layout
+> **Status: early.** What runs today is the marketing site with an in-browser PostgreSQL playground,
+> and an engine that serves health, the database engine catalog and its OpenAPI spec. The
+> workspace, drivers, MCP server, auth and relay land phase by phase: see
+> [`docs/01-PLAN.md`](docs/01-PLAN.md).
 
-- `apps/site`: Landing page, interactive browser PostgreSQL sandbox (`PGlite`), MCP guardrail simulator, `/demo` teaser mode, and Resend beta waitlist (`tydbase.blivius.com`).
-- `packages/ui`: Shared dark-first design tokens, components, and brand/database vector marks.
-- `packages/wasm-playground`: Client-side PostgreSQL WebAssembly engine (`@electric-sql/pglite`) with seeded datasets.
-- `packages/config`: Shared TypeScript configuration.
-- `engine`: the Go binary (`tydbase`). Today: health, engine catalog, OpenAPI 3.1 export. Drivers, MCP, relay and WASM plugins arrive by phase (`docs/01-PLAN.md`).
+## Layout
 
-## Local Development
+| Path | What it is |
+| --- | --- |
+| `engine/` | The Go binary `tydbase` (Huma v2 + Chi). A modular monolith: `internal/app` wires modules, `internal/platform` is shared, and each module lives in `internal/<name>` |
+| `apps/site/` | Landing page, PGlite playground, MCP guardrail simulator, `/demo`, and the Resend waitlist (`tydbase.blivius.com`) |
+| `apps/web/` | The workspace SPA, embedded into the binary (Phase 1) |
+| `packages/sdk/` | TypeScript client generated from `engine/openapi.json` |
+| `packages/ui/` | Design tokens and shared components |
+| `packages/wasm-playground/` | PGlite hook and seed data for the site |
+| `docs/` | Decisions and the phase plan |
 
-Requires **Bun `1.4.4+`** and **Node `26.13.1` LTS** (see `.nvmrc`).
+## Develop
+
+Requirements: Bun 1.4.4+, Node 26.13.1 (`.nvmrc`), Go (`engine/go.mod`), go-task, Docker, and
+golangci-lint v2.
 
 ```bash
-bun install
-bun run dev
+bun install            # dependencies + git hooks
+task check             # lint, format, typecheck, tests, govulncheck, build
+task dev:engine        # engine on :8080 (API docs at /docs)
+task dev:site          # site on :3000
+task sdk:gen           # regenerate the TS SDK after changing an API route
 ```
 
-## Verification
+Docker is the verification path:
 
 ```bash
-bun run lint
-bun run fmt:check
-bun run typecheck
-bun run build
+docker compose -p tydbase-api -f deploy/compose/backend.compose.yml up -d --build
+docker compose -p tydbase-site -f deploy/compose/site.compose.yml up -d --build
 ```
+
+## Contributing and security
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Report vulnerabilities privately as described in
+[`SECURITY.md`](SECURITY.md).
 
 ## License
 
-Apache-2.0. See [LICENSE](./LICENSE).
+Apache-2.0. See [LICENSE](LICENSE).
