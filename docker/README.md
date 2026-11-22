@@ -2,12 +2,18 @@
 
 Every command runs from the repo root. Docker is the verification path for every change.
 
+**Develop on `task up`:** saving any `engine/**/*.go` rebuilds and restarts the engine (~1s), and
+saving under `apps/site/src` or `packages/*/src` updates the site live. After changing `package.json`,
+`bun.lock`, `next.config.ts` or `go.mod`, run `task up` again to rebuild. **Verify on `task up:prod`**
+before handing over. Both stacks read `apps/site/.env` at container creation; it never enters an
+image (`.dockerignore`).
+
 | File | Purpose | Command |
 | --- | --- | --- |
-| `Dockerfile` | Engine image: static Go binary on distroless, nonroot, `tydbase healthcheck` | built by `compose.yml` |
-| `Dockerfile.site` | Marketing site (Next standalone). Local verification only; production is Vercel | built by `compose.dev.yml` |
-| `compose.yml` | Self-host stack (`tydbase` project): engine on `:8080`, read-only rootfs, no capabilities | `docker compose -f docker/compose.yml up -d --build` |
-| `compose.dev.yml` | Dev overlay: development env, the site on `:3000` (reads `apps/site/.env`) | `docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build` |
+| `Dockerfile` | Engine. Default target: static binary on distroless, nonroot, `tydbase healthcheck`. `dev` target: air hot reload | — |
+| `Dockerfile.site` | Marketing site. Default target: Next standalone (production is Vercel). `dev` target: `next dev` | — |
+| `compose.yml` | Production builds (`tydbase` project): engine on `:8080` (read-only rootfs, no capabilities); the site on `:3000` behind the `site` profile | `task up:prod` (self-host engine only: `docker compose -f docker/compose.yml up -d --build`) |
+| `compose.dev.yml` | Hot-reload overlay: `dev` targets, `engine/` and the site/package `src` dirs bind-mounted, Go caches in volumes | `task up` |
 | `compose.dbs.yml` | Seeded target DBs (`tydbase-dbs` project) | `docker compose -f docker/compose.dbs.yml up -d` |
 | `dbs/seed/` | Seeds: same domain as the site playground, 10k-row `query_events`, pgvector, Mongo carts, Redis keys | run automatically on first start |
 

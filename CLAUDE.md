@@ -86,8 +86,9 @@ task check                    # lint, fmt:check, typecheck, test, build (JS + Go
 task sdk:gen                  # export engine OpenAPI → regenerate packages/sdk/src/schema.d.ts
 task dev:site                 # site on :3000 (Docker is still the verification path)
 
-task up          # = docker compose -f docker/compose.yml -f docker/compose.dev.yml up -d --build
-                 #   engine :8080 (/docs) + site :3000 (reads apps/site/.env)
+task up          # hot reload: engine (air) :8080 + site (next dev) :3000, source bind-mounted
+task up:prod     # production builds (distroless engine + standalone site): the pre-handover check
+task logs        # follow engine + site
 task down
 task dbs         # seeded target DBs (compose.dbs.yml); `task dbs -- --profile mssql` adds MSSQL
 task dbs:down    # stop + wipe; seeds re-run on next start
@@ -150,7 +151,8 @@ Run these in order for every milestone:
 1. `bun run fmt:check && bun run lint && bun run typecheck && bun run test`
 2. `cd engine && test -z "$(gofmt -l .)" && golangci-lint run && go test -race ./... && go test -count=1 ./internal/app -run Boundaries && govulncheck ./...`
 3. `node ~/.claude/skills/hallmark/scripts/sloplint.mjs apps/site/src apps/web/src`
-4. Docker: the relevant compose files `up -d --build`. Containers are healthy and logs are clean.
+4. Docker: develop against `task up` (hot reload), then verify the milestone on `task up:prod`
+   (production builds). Containers are healthy and logs are clean.
 5. Chrome (claude-in-chrome): every entry point and state, 390px, Scalar `/docs` renders, 0 console errors.
 6. Write numbered manual test steps for Moeen, give the handover, and stop.
 
@@ -241,6 +243,11 @@ Animation and layout rules:
   page while the API keeps working.
 - **Vercel's filesystem is read-only.** The waitlist's JSON fallback is dev-only, and production
   without `RESEND_API_KEY` must fail with 503, not lose signups.
+- **Docker build contexts are the repo root, and `.dockerignore` patterns are anchored there.** A bare
+  `.env` line only excludes the root file. Keep the `**/` prefix, or `apps/site/.env` (the Resend
+  key) gets copied into an image layer. It happened once.
+- **`compose.dev.yml` mounts source directories only.** After changing `package.json`, `bun.lock`,
+  `next.config.ts` or `go.mod`, run `task up` again (it rebuilds); a running container won't see them.
 - **Never run `lint-staged` (or the pre-commit hook) yourself.** It stages the files its tasks touch,
   which breaks hard rule 1. To test the hook, run it in a throwaway repo under the scratchpad.
   `engine/openapi.json` is excluded from oxfmt because CI diffs it byte-for-byte against Go's output.

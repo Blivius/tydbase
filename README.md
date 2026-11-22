@@ -41,7 +41,8 @@ task sdk:gen           # regenerate the TS SDK after changing an API route
 Docker is the verification path (details and DB logins in [`docker/README.md`](docker/README.md)):
 
 ```bash
-task up                # engine :8080 + site :3000, detached
+task up                # hot reload: engine (air) :8080 + site (next dev) :3000
+task up:prod           # production builds, the check before handover
 task dbs               # seeded Postgres/pgvector, MySQL, MariaDB, MongoDB, Redis
 task down && task dbs:down
 ```
