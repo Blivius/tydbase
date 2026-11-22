@@ -15,7 +15,8 @@ import {
   Terminal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { type KeyboardEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { SqlCodeEditor } from "./sql-code-editor";
 
 type PlaygroundTab = "sql" | "nosql-vector" | "mcp";
 type MultiParadigmView = "vector" | "mongodb" | "redis";
@@ -160,9 +161,10 @@ const MCP_SAMPLE_ROWS = [
 
 export function InteractivePlaygroundSection() {
   const [activeTab, setActiveTab] = useState<PlaygroundTab>("sql");
-  const { status, error, result, presets, runQuery, resetDb } = usePglitePlayground();
+  const { status, error, result, presets, runQuery, clearResult, resetDb } = usePglitePlayground();
   const [sqlInput, setSqlInput] = useState<string>(presets[0]?.sql ?? "SELECT 1;");
   const [selectedPresetId, setSelectedPresetId] = useState<string>(presets[0]?.id ?? "");
+  const [executedSql, setExecutedSql] = useState<string | null>(null);
   const [sqlPiiMask, setSqlPiiMask] = useState(false);
 
   const [paradigmView, setParadigmView] = useState<MultiParadigmView>("vector");
@@ -205,19 +207,26 @@ export function InteractivePlaygroundSection() {
   function handlePresetClick(id: string, sql: string) {
     setSelectedPresetId(id);
     setSqlInput(sql);
+    setExecutedSql(null);
+    clearResult();
     if (id === "pii-members") {
       setSqlPiiMask(true);
     }
-    void runQuery(sql);
   }
 
-  function handleEditorKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault();
-      void runQuery(sqlInput);
-    }
+  function handleRunSql() {
+    if (status === "booting" || status === "running") return;
+    setExecutedSql(sqlInput);
+    void runQuery(sqlInput);
   }
 
+  function handleResetDb() {
+    setExecutedSql(null);
+    void resetDb();
+  }
+
+  const activePreset = presets.find((p) => p.id === selectedPresetId) ?? presets[0];
+  const hasUnrunEdits = result !== null && executedSql !== null && executedSql !== sqlInput;
   const activeMcp = MCP_CLIENTS[mcpClient];
   const rankedVectors = VECTOR_DOCS.toSorted(
     (a, b) => b.scores[vectorQuery] - a.scores[vectorQuery]
@@ -297,7 +306,7 @@ export function InteractivePlaygroundSection() {
                           key={preset.id}
                           type="button"
                           onClick={() => handlePresetClick(preset.id, preset.sql)}
-                          className={`rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                          className={`rounded-[2px] border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                             isSelected
                               ? "border-accent bg-accent-tint text-accent"
                               : "border-line text-ink-secondary hover:border-line-strong hover:text-ink"
@@ -313,7 +322,7 @@ export function InteractivePlaygroundSection() {
                     <button
                       type="button"
                       onClick={() => setSqlPiiMask((prev) => !prev)}
-                      className={`inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium whitespace-nowrap transition-colors ${
+                      className={`inline-flex h-10 items-center gap-1.5 rounded-[2px] border px-3 text-sm font-medium whitespace-nowrap transition-colors ${
                         sqlPiiMask
                           ? "border-accent bg-accent-tint text-accent"
                           : "border-line-strong text-ink-secondary hover:text-ink"
@@ -328,18 +337,18 @@ export function InteractivePlaygroundSection() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void resetDb()}
+                      onClick={handleResetDb}
                       disabled={status === "booting" || status === "running"}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-md border border-line-strong px-3 text-sm font-medium whitespace-nowrap text-ink-secondary transition-colors hover:text-ink disabled:opacity-50"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-[2px] border border-line-strong px-3 text-sm font-medium whitespace-nowrap text-ink-secondary transition-colors hover:text-ink disabled:opacity-50"
                     >
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                       Reset DB
                     </button>
                     <button
                       type="button"
-                      onClick={() => void runQuery(sqlInput)}
+                      onClick={handleRunSql}
                       disabled={status === "booting" || status === "running"}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-4 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-[2px] bg-accent px-4 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
                     >
                       <Play className="h-3.5 w-3.5" aria-hidden="true" />
                       {status === "booting"
@@ -352,23 +361,17 @@ export function InteractivePlaygroundSection() {
                 </div>
 
                 <div className="bg-surface-well/50 p-5">
-                  <label htmlFor="pglite-sql-editor" className="sr-only">
-                    In-browser PostgreSQL query editor
-                  </label>
-                  <textarea
+                  <SqlCodeEditor
                     id="pglite-sql-editor"
                     value={sqlInput}
-                    onChange={(e) => setSqlInput(e.target.value)}
-                    onKeyDown={handleEditorKeyDown}
-                    rows={6}
-                    spellCheck={false}
-                    className="w-full resize-y border border-edge bg-surface-well p-4 font-mono text-sm leading-relaxed text-ink"
+                    onChange={setSqlInput}
+                    onExecute={handleRunSql}
                   />
                   <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
                     <span>
                       Engine: PostgreSQL running locally inside your browser (PGlite WASM)
                     </span>
-                    <span>Shortcut: Cmd/Ctrl + Enter</span>
+                    <span>Tables: workspaces, members, saved_queries, ai_documents</span>
                   </div>
                 </div>
 
@@ -383,9 +386,16 @@ export function InteractivePlaygroundSection() {
                   ) : result ? (
                     <div>
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
-                        <span className="tyd-tabular text-accent">
-                          {result.rows.length} rows returned in {result.durationMs} ms
-                        </span>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="tyd-tabular font-medium text-accent">
+                            {result.rows.length} rows returned in {result.durationMs} ms
+                          </span>
+                          {hasUnrunEdits && (
+                            <span className="font-medium text-warn">
+                              Query modified: press Cmd/Ctrl + Enter to re-run
+                            </span>
+                          )}
+                        </div>
                         <span className="tyd-tabular">Executed at {result.executedAt}</span>
                       </div>
                       <div className="overflow-x-auto">
@@ -441,9 +451,30 @@ export function InteractivePlaygroundSection() {
                       </div>
                     </div>
                   ) : (
-                    <p className="py-6 text-sm text-ink-muted">
-                      Initializing in-browser PostgreSQL WebAssembly runtime…
-                    </p>
+                    <div className="flex flex-col items-start justify-between gap-4 border border-dashed border-line-strong bg-surface-well/70 px-5 py-6 sm:flex-row sm:items-center">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold text-accent">
+                          {status === "booting"
+                            ? "Booting in-browser PostgreSQL WebAssembly runtime…"
+                            : status === "running"
+                              ? "Executing query against PGlite WASM…"
+                              : `Ready to execute: ${activePreset?.label ?? "Custom SQL"}`}
+                        </p>
+                        <p className="text-sm text-ink-secondary">
+                          {activePreset?.description ??
+                            "Edit the SQL above and run it locally inside your browser."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRunSql}
+                        disabled={status === "booting" || status === "running"}
+                        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-[2px] border border-accent bg-accent-tint px-4 text-sm font-semibold whitespace-nowrap text-accent transition-colors hover:bg-accent hover:text-accent-ink disabled:opacity-50"
+                      >
+                        <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                        {status === "booting" ? "Booting WASM…" : "Run query (Cmd+Enter)"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -471,7 +502,7 @@ export function InteractivePlaygroundSection() {
                         key={mode.id}
                         type="button"
                         onClick={() => setParadigmView(mode.id)}
-                        className={`rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                        className={`rounded-[2px] border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                           paradigmView === mode.id
                             ? "border-accent bg-accent-tint text-accent"
                             : "border-line text-ink-secondary hover:border-line-strong hover:text-ink"
@@ -500,7 +531,7 @@ export function InteractivePlaygroundSection() {
                               key={key}
                               type="button"
                               onClick={() => setVectorQuery(key)}
-                              className={`rounded-md border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+                              className={`rounded-[2px] border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
                                 vectorQuery === key
                                   ? "border-accent bg-accent-tint text-accent"
                                   : "border-line text-ink-secondary hover:border-line-strong hover:text-ink"
@@ -705,7 +736,7 @@ export function InteractivePlaygroundSection() {
                           setMcpClient(key);
                           startAgentTrace();
                         }}
-                        className={`rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                        className={`rounded-[2px] border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                           mcpClient === key
                             ? "border-accent bg-accent-tint text-accent"
                             : "border-line text-ink-secondary hover:border-line-strong hover:text-ink"
@@ -720,7 +751,7 @@ export function InteractivePlaygroundSection() {
                     <button
                       type="button"
                       onClick={startAgentTrace}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-[2px] bg-accent px-3.5 text-sm font-bold whitespace-nowrap text-accent-ink transition-colors hover:bg-accent-hover"
                     >
                       <Play className="h-3.5 w-3.5" aria-hidden="true" />
                       Replay agent trace
@@ -728,7 +759,7 @@ export function InteractivePlaygroundSection() {
                     <button
                       type="button"
                       onClick={() => setPiiMasking((prev) => !prev)}
-                      className="inline-flex h-10 items-center gap-2 rounded-md border border-line-strong px-3.5 text-sm font-medium whitespace-nowrap text-ink transition-colors hover:border-accent"
+                      className="inline-flex h-10 items-center gap-2 rounded-[2px] border border-line-strong px-3.5 text-sm font-medium whitespace-nowrap text-ink transition-colors hover:border-accent"
                     >
                       {piiMasking ? (
                         <EyeOff className="h-4 w-4 text-accent" aria-hidden="true" />
@@ -872,7 +903,7 @@ export function InteractivePlaygroundSection() {
                             <button
                               type="button"
                               onClick={() => setMutationDecision("rejected")}
-                              className="inline-flex h-12 items-center justify-center rounded-md border border-danger/60 bg-danger-tint px-4 text-sm font-semibold whitespace-nowrap text-danger transition-colors hover:border-danger"
+                              className="inline-flex h-12 items-center justify-center rounded-[2px] border border-danger/60 bg-danger-tint px-4 text-sm font-semibold whitespace-nowrap text-danger transition-colors hover:border-danger"
                             >
                               Block write
                             </button>

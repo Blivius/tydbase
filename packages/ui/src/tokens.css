@@ -28,6 +28,17 @@
   --color-danger: oklch(69% 0.175 24);
   --color-danger-tint: oklch(20% 0.05 24);
 
+  /* Syntax highlighting tokens (sharp dark SQL editor) */
+  --syn-keyword: oklch(78% 0.15 160);
+  --syn-string: oklch(82% 0.12 85);
+  --syn-number: oklch(77% 0.14 220);
+  --syn-type: oklch(76% 0.13 200);
+  --syn-operator: oklch(70% 0.04 162);
+  --syn-comment: oklch(54% 0.014 162);
+  --syn-ident: oklch(94% 0.008 162);
+  --syn-line-active: oklch(14.5% 0.018 162);
+  --syn-selection: oklch(28% 0.065 160);
+
   /* Sharp geometric typography (matches Blivius HQ + sharp TYDBASE wordmark) */
   --font-display: var(--font-schibsted), "Schibsted Grotesk", ui-sans-serif, sans-serif;
   --font-body: var(--font-schibsted), "Schibsted Grotesk", ui-sans-serif, sans-serif;

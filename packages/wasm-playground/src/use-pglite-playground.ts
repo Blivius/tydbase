@@ -25,32 +25,11 @@ interface PGliteLike {
   close(): Promise<void>;
 }
 
-async function createSeededDatabase(): Promise<{
-  db: PGliteLike;
-  initialResult: PlaygroundResult | null;
-}> {
+async function createSeededDatabase(): Promise<PGliteLike> {
   const { PGlite } = await import("@electric-sql/pglite");
   const db = (await PGlite.create()) as unknown as PGliteLike;
   await db.exec(SEED_SQL);
-
-  const initialPreset = SQL_PRESETS[0];
-  if (!initialPreset) {
-    return { db, initialResult: null };
-  }
-
-  const started = performance.now();
-  const res = await db.query(initialPreset.sql);
-  const durationMs = Math.max(0.2, Number((performance.now() - started).toFixed(1)));
-  return {
-    db,
-    initialResult: {
-      columns: res.fields.map((f) => f.name),
-      rows: res.rows,
-      affectedRows: res.affectedRows ?? null,
-      durationMs,
-      executedAt: new Date().toLocaleTimeString(),
-    },
-  };
+  return db;
 }
 
 export function usePglitePlayground() {
@@ -63,7 +42,7 @@ export function usePglitePlayground() {
     let isCancelled = false;
 
     createSeededDatabase()
-      .then(async ({ db, initialResult }) => {
+      .then(async (db) => {
         if (isCancelled) {
           await db.close().catch(() => {});
           return;
@@ -72,7 +51,7 @@ export function usePglitePlayground() {
           await dbRef.current.close().catch(() => {});
         }
         dbRef.current = db;
-        setResult(initialResult);
+        setResult(null);
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -91,16 +70,22 @@ export function usePglitePlayground() {
     };
   }, []);
 
+  const clearResult = useCallback(() => {
+    setResult(null);
+    setError(null);
+  }, []);
+
   const resetDb = useCallback(async () => {
     setStatus("booting");
     setError(null);
+    setResult(null);
     try {
-      const { db, initialResult } = await createSeededDatabase();
+      const db = await createSeededDatabase();
       if (dbRef.current) {
         await dbRef.current.close().catch(() => {});
       }
       dbRef.current = db;
-      setResult(initialResult);
+      setResult(null);
       setStatus("ready");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset in-browser PostgreSQL.");
@@ -143,6 +128,7 @@ export function usePglitePlayground() {
     result,
     presets: SQL_PRESETS,
     runQuery,
+    clearResult,
     resetDb,
   };
 }
