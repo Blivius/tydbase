@@ -10,7 +10,7 @@ Self-host every feature for $0 forever under Apache-2.0, or use managed TydBase 
 - `packages/ui`: Shared dark-first design tokens, components, and brand/database vector marks.
 - `packages/wasm-playground`: Client-side PostgreSQL WebAssembly engine (`@electric-sql/pglite`) with seeded datasets.
 - `packages/config`: Shared TypeScript configuration.
-- `backend`: Go API, multi-paradigm drivers, outbound Relay Agent, `wazero` WASM plugin runtime, and Official Go MCP server (Phase 0+).
+- `engine`: the Go binary (`tydbase`). Today: health, engine catalog, OpenAPI 3.1 export. Drivers, MCP, relay and WASM plugins arrive by phase (`docs/01-PLAN.md`).
 
 ## Local Development
 

@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅)**
+Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅ · M0.5-b ✅)**
 
 ---
 
@@ -46,7 +46,7 @@ a live waitlist.
 | Milestone | Scope |
 |---|---|
 | M0.5-a Toolchain + CI | gofmt; golangci-lint v2 config; CI gofmt + lint + SDK drift; actions bumped and SHA-pinned; `security.yml` (bun audit, govulncheck, gitleaks, zizmor); Bun catalog pins; `bunfig.toml` (`exact`, `minimumReleaseAge`); oxlint aligned with velaops |
-| M0.5-b `engine/` rename + modular skeleton | `git mv backend engine`; `internal/engine` → `internal/driver`; `internal/app` composition root + `boundaries_test.go`; `internal/platform` (config, httpx); `server --modules=`; `engine/tools/go.mod` for sqlc; all paths updated |
+| M0.5-b `engine/` rename + modular skeleton | `backend/` → `engine/`; `internal/engine` → `internal/driver`; `internal/app` composition root + `boundaries_test.go`; `internal/platform` (config, httpx); `server --modules=`; all paths updated. `engine/tools/go.mod` for sqlc moves to P1 · M1 (no sqlc query exists yet) |
 | M0.5-c Hooks + hygiene | husky pre-commit (lint-staged), pre-push, post-merge; `.editorconfig`; `SECURITY.md`; `CONTRIBUTING.md`; PR + issue templates; root `.env.example`; README rewritten to the truth; `.gitignore` additions |
 | M0.5-d Docker | `docker/`: `Dockerfile`, `Dockerfile.site`, `compose.yml`, `compose.dev.yml`, `compose.dbs.yml`, `dbs/seed/*`, `README.md`; delete `deploy/` |
 | M0.5-e Engine polish | Scalar docs; ldflags version; `tydbase healthcheck`; catalog accuracy + `catalog_test.go`; actionable 404 details |

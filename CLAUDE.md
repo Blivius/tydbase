@@ -132,16 +132,15 @@ packages/wasm-playground/  PGlite hook + seed for the site
 packages/config/      shared tsconfig
 engine/               Go module github.com/tydbase/tydbase/engine
   cmd/tydbase/        thin main
-  internal/app/       wiring + boundaries_test.go
-  internal/platform/  shared kernel
-  internal/driver/    engine catalog, Driver interface, drivers, pool
-  sql/migrations/     goose migrations (embedded)   sql/queries/<module>.sql   sqlc
+  internal/app/       composition root: module registry, health route, boundaries_test.go
+  internal/platform/  shared kernel: config, httpx (router + Huma API)
+  internal/driver/    engine catalog (+ Driver interface, drivers, pool from P1)
+  sql/                goose migrations + sqlc queries (arrive in P1 · M1)
 docker/               Dockerfile, Dockerfile.site, compose*.yml, dbs/seed/
 docs/                 00-DECISIONS.md, 01-PLAN.md
 ```
 
-Transition note: until Phase 0.5 lands, `engine/` is still `backend/` and `docker/` is still
-`deploy/`. Delete this note when M0.5-d is done.
+Transition note: until M0.5-d lands, `docker/` is still `deploy/`. Delete this note then.
 
 ---
 
@@ -201,8 +200,11 @@ Animation and layout rules:
   - `testing/synctest` for anything time-based (pool TTLs, timeouts).
   - `t.Context()` in tests.
 - Builds use `CGO_ENABLED=0 -trimpath`, with the version stamped via `-ldflags "-X main.version=..."`.
-- Tools: goose is a library (migrations embedded). sqlc runs via `go tool -modfile=tools/go.mod sqlc`.
-  golangci-lint is pinned in CI and installed with brew locally.
+- Tools: goose is a library (migrations embedded). sqlc will run via `go tool -modfile=tools/go.mod sqlc`
+  (the tools module lands with the first sqlc query in P1 · M1). golangci-lint is pinned in CI and
+  installed with brew locally.
+- Adding a module: create `internal/<name>/` with `Register(huma.API)`, then add it to the `modules`
+  table in `internal/app/app.go`. That is all `--modules` needs.
 - Driver tests run against real databases: `docker/compose.dbs.yml` locally, testcontainers-go in CI.
 
 ---
