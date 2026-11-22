@@ -13,14 +13,17 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-6 text-sm text-ink-secondary">
-          <Link href="#playground" className="transition-colors hover:text-ink">
+          <Link href="/#playground" className="transition-colors hover:text-ink">
             Live sandbox
           </Link>
           <Link href="/demo" className="transition-colors hover:text-ink">
             Teaser demo
           </Link>
-          <Link href="#waitlist" className="transition-colors hover:text-ink">
+          <Link href="/#waitlist" className="transition-colors hover:text-ink">
             Private beta
+          </Link>
+          <Link href="/privacy" className="transition-colors hover:text-ink">
+            Privacy
           </Link>
         </div>
       </div>

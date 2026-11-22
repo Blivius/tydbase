@@ -1,6 +1,8 @@
 "use client";
 
+import { readWaitlistResponse } from "@/lib/waitlist-response";
 import { Check, Copy } from "lucide-react";
+import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 const DATABASE_OPTIONS = [
@@ -50,7 +52,7 @@ export function WaitlistSection() {
           source: "waitlist-full-form",
         }),
       });
-      const data = (await res.json()) as { ok?: boolean; message?: string };
+      const data = await readWaitlistResponse(res);
       if (!res.ok || !data.ok) {
         setState("error");
         setMessage(data.message ?? "Could not save your signup right now.");
@@ -202,7 +204,10 @@ export function WaitlistSection() {
                     : "text-ink-muted"
               }`}
             >
-              {message || "Only beta invites and release notes. Unsubscribe anytime."}
+              {message || "Only beta invites and release notes. Unsubscribe anytime."}{" "}
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
+                Privacy
+              </Link>
             </p>
             <button
               type="submit"

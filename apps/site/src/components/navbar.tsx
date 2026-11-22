@@ -4,10 +4,10 @@ import { TydBaseLogo } from "@tydbase/ui";
 import Link from "next/link";
 
 const NAV_LINKS = [
-  { href: "#problem", label: "Problem" },
-  { href: "#playground", label: "Live sandbox" },
-  { href: "#architecture", label: "Architecture" },
-  { href: "#self-host", label: "Self-host" },
+  { href: "/#problem", label: "Problem" },
+  { href: "/#playground", label: "Live sandbox" },
+  { href: "/#architecture", label: "Architecture" },
+  { href: "/#self-host", label: "Self-host" },
 ];
 
 export function Navbar() {
@@ -34,7 +34,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex shrink-0 items-center">
-          <Link href="#waitlist" className="tyd-btn-primary">
+          <Link href="/#waitlist" className="tyd-btn-primary">
             Join beta
           </Link>
         </div>
