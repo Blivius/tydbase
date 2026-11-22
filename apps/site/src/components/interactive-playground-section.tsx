@@ -20,8 +20,10 @@ import { SqlCodeEditor } from "./sql-code-editor";
 
 type PlaygroundTab = "sql" | "nosql-vector" | "mcp";
 type MultiParadigmView = "vector" | "mongodb" | "redis";
-type McpClientKey = "claude" | "codex" | "gemini";
-type VectorQueryKey = "relay" | "pii" | "oauth";
+const MCP_CLIENT_KEYS = ["claude", "codex", "gemini"] as const;
+type McpClientKey = (typeof MCP_CLIENT_KEYS)[number];
+const VECTOR_QUERY_KEYS = ["relay", "pii", "oauth"] as const;
+type VectorQueryKey = (typeof VECTOR_QUERY_KEYS)[number];
 
 interface VectorMatch {
   id: string;
@@ -530,7 +532,7 @@ export function InteractivePlaygroundSection() {
                           Switch the semantic prompt to watch HNSW cosine rankings reorder live.
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {(Object.keys(VECTOR_QUERIES) as VectorQueryKey[]).map((key) => (
+                          {VECTOR_QUERY_KEYS.map((key) => (
                             <button
                               key={key}
                               type="button"
@@ -732,7 +734,7 @@ export function InteractivePlaygroundSection() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-well px-5 py-3.5">
                   <div className="flex flex-wrap gap-2">
-                    {(Object.keys(MCP_CLIENTS) as McpClientKey[]).map((key) => (
+                    {MCP_CLIENT_KEYS.map((key) => (
                       <button
                         key={key}
                         type="button"

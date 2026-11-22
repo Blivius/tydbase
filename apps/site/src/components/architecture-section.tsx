@@ -4,7 +4,8 @@ import { Cpu, GlobeLock, Layers, Terminal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
-type CliMode = "start" | "agent" | "mcp";
+const CLI_MODE_KEYS = ["start", "agent", "mcp"] as const;
+type CliMode = (typeof CLI_MODE_KEYS)[number];
 
 const CLI_MODES: Record<CliMode, { label: string; command: string; lines: string[] }> = {
   start: {
@@ -314,7 +315,7 @@ export function ArchitectureSection() {
 
           <div className="tyd-panel overflow-hidden lg:col-span-6">
             <div className="flex flex-wrap items-center gap-1.5 border-b border-line bg-surface-well px-4 py-3">
-              {(Object.keys(CLI_MODES) as CliMode[]).map((key) => (
+              {CLI_MODE_KEYS.map((key) => (
                 <button
                   key={key}
                   type="button"

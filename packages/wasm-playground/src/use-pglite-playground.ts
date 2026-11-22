@@ -1,5 +1,6 @@
 "use client";
 
+import type { PGlite } from "@electric-sql/pglite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SEED_SQL, SQL_PRESETS } from "./seed";
 
@@ -13,27 +14,16 @@ export interface PlaygroundResult {
 
 export type PlaygroundStatus = "booting" | "ready" | "running" | "error";
 
-interface PGliteLike {
-  exec(sql: string): Promise<unknown>;
-  query<T = Record<string, unknown>>(
-    sql: string
-  ): Promise<{
-    fields: Array<{ name: string }>;
-    rows: T[];
-    affectedRows?: number;
-  }>;
-  close(): Promise<void>;
-}
-
-async function createSeededDatabase(): Promise<PGliteLike> {
+async function createSeededDatabase(): Promise<PGlite> {
+  // Loaded on demand: the WASM bundle only downloads when the playground mounts.
   const { PGlite } = await import("@electric-sql/pglite");
-  const db = (await PGlite.create()) as unknown as PGliteLike;
+  const db = await PGlite.create();
   await db.exec(SEED_SQL);
   return db;
 }
 
 export function usePglitePlayground() {
-  const dbRef = useRef<PGliteLike | null>(null);
+  const dbRef = useRef<PGlite | null>(null);
   const [status, setStatus] = useState<PlaygroundStatus>("booting");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PlaygroundResult | null>(null);
@@ -106,7 +96,7 @@ export function usePglitePlayground() {
     setError(null);
     const started = performance.now();
     try {
-      const res = await db.query(trimmed);
+      const res = await db.query<Record<string, unknown>>(trimmed);
       const durationMs = Math.max(0.2, Number((performance.now() - started).toFixed(1)));
       setResult({
         columns: res.fields.map((f) => f.name),

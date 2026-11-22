@@ -1,5 +1,6 @@
 "use client";
 
+import { readWaitlistResponse } from "@/lib/waitlist-response";
 import { Check, Database, Play, ShieldAlert, ShieldCheck, Terminal, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -111,7 +112,7 @@ export function HeroSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), source: "hero-form" }),
       });
-      const data = (await res.json()) as { ok?: boolean; message?: string };
+      const data = await readWaitlistResponse(res);
       if (!res.ok || !data.ok) {
         setSubmitState("error");
         setFeedback(data.message ?? "Could not join right now.");
