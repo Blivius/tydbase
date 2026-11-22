@@ -247,7 +247,7 @@ export async function POST(request: Request) {
           provider: "resend",
           message: result.alreadyJoined
             ? "You are already on the TydBase beta list."
-            : "Added to the TydBase private beta waitlist.",
+            : "Thanks! Bet, you won't regret it 😎",
         },
         { status: result.alreadyJoined ? 200 : 201 }
       );
