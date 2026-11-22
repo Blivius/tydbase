@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current**
+Status: **Pre-Phase ✅ · Phase 0 ✅ (audited 2026-11-22) · Phase 0.5 ← current (M0.5-a ✅)**
 
 ---
 
@@ -26,6 +26,14 @@ Audit findings (2026-11-22) that feed Phase 0.5:
 - The catalog overclaims vector support.
 - No version stamping.
 
+Docker + Chrome validation (2026-11-22, Step 3):
+- The site, playground (all 4 presets, PII toggle), NoSQL tab, MCP simulator (replay → approve), waitlist UI, and `/demo` (scenes, record mode) all work, with 0 console errors.
+- **Mobile nav bug.** `globals.css:128` puts `.tyd-nav-rail { display: flex }` outside any cascade layer. Unlayered CSS beats Tailwind v4's `@layer utilities`, so `hidden md:flex` never hides it. Below 768px the links overflow and the "Join beta" CTA is clipped. Fix: move the custom `tyd-*` classes into `@layer components`.
+- Prod container without a Resend key answers `201 provider:"local-dev"`, so signups land in a container file. Rotating `X-Forwarded-For` bypassed the limiter: 12 of 12 requests passed with no 429.
+- Missing: `/robots.txt`, `/sitemap.xml`, `/opengraph-image`, `/privacy`, and all security headers.
+- Both compose files default to project `compose`, which causes orphan-container warnings. Gemini also left its containers running.
+- The engine's 404 detail ("database engine not found") doesn't say what to do. Point it to `GET /api/v1/engines`.
+
 ---
 
 ## Phase 0.5 — Hardening
@@ -41,8 +49,8 @@ a live waitlist.
 | M0.5-b `engine/` rename + modular skeleton | `git mv backend engine`; `internal/engine` → `internal/driver`; `internal/app` composition root + `boundaries_test.go`; `internal/platform` (config, httpx); `server --modules=`; `engine/tools/go.mod` for sqlc; all paths updated |
 | M0.5-c Hooks + hygiene | husky pre-commit (lint-staged), pre-push, post-merge; `.editorconfig`; `SECURITY.md`; `CONTRIBUTING.md`; PR + issue templates; root `.env.example`; README rewritten to the truth; `.gitignore` additions |
 | M0.5-d Docker | `docker/`: `Dockerfile`, `Dockerfile.site`, `compose.yml`, `compose.dev.yml`, `compose.dbs.yml`, `dbs/seed/*`, `README.md`; delete `deploy/` |
-| M0.5-e Engine polish | Scalar docs; ldflags version; `tydbase healthcheck`; catalog accuracy + `catalog_test.go` |
-| M0.5-f Waitlist + site basics | Fail-closed 503; `x-real-ip` + pruning; 8s timeouts + `allSettled`; Resend API shape verified; tests. OG image, robots, sitemap, `/privacy`, security headers, `not-found` |
+| M0.5-e Engine polish | Scalar docs; ldflags version; `tydbase healthcheck`; catalog accuracy + `catalog_test.go`; actionable 404 details |
+| M0.5-f Waitlist + site basics | `tyd-*` classes into `@layer components` (mobile nav fix); clear the 16 type-aware oxlint warnings (`res.json() as T` → zod parse, real `PGlite` type); fail-closed 503; `x-real-ip` + pruning; 8s timeouts + `allSettled`; Resend API shape verified; tests. OG image, robots, sitemap, `/privacy`, security headers, `not-found` |
 | M0.5-g Ship | Full Docker + Chrome pass; Moeen pushes; CI + security green; Vercel deploy + prod smoke |
 
 **Acceptance:**
