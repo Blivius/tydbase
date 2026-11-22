@@ -1,0 +1,47 @@
+name: Bug report
+description: Something behaves differently from the docs or what you expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems go through [private reporting](https://github.com/neeomdumham/tydbase/security/advisories/new), never an issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `tydbase version`, the image tag, or the commit.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - Engine API
+        - Web workspace
+        - MCP server
+        - CLI (start / server / mcp / agent)
+        - Docker image or compose
+        - Marketing site or waitlist
+    validations:
+      required: true
+  - type: input
+    id: database
+    attributes:
+      label: Target database
+      description: Engine and version, if it matters (e.g. PostgreSQL 17 + pgvector).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The command, request or steps, and the output or error, pasted in full.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true

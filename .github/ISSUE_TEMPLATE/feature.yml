@@ -1,0 +1,26 @@
+name: Feature request
+description: A concrete capability TydBase should have.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `docs/00-DECISIONS.md` and `docs/01-PLAN.md` first: it may be planned, or deliberately ruled out.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you're trying to do, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like
+      description: The behaviour you want. A command, request or screen sketch helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
