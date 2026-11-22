@@ -16,12 +16,14 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
+    "test": "bun test",
     "lint": "oxlint --config .oxlintrc.json apps packages",
     "fmt": "oxfmt --config .oxfmtrc.json --write apps packages",
     "fmt:check": "oxfmt --config .oxfmtrc.json --check apps packages",
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",
     "turbo": "2.11.13",

@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@tydbase/config": "workspace:*",
+    "@types/bun": "latest",
     "@types/react": "latest",
     "react": "19.3.1",
     "typescript": "latest"

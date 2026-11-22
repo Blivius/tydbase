@@ -1,6 +1,7 @@
 {
   "extends": "@tydbase/config/tsconfig.nextjs.json",
   "compilerOptions": {
+    "types": ["bun", "node"],
     "paths": {
       "@/*": ["./src/*"]
     }

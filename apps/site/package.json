@@ -23,6 +23,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.5",
     "@tydbase/config": "workspace:*",
+    "@types/bun": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
