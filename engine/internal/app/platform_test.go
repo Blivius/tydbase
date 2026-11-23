@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tydbase/tydbase/engine/internal/app"
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/app"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
 )
 
 func TestOpenPlatformCreatesPrivateDataDir(t *testing.T) {

@@ -33,4 +33,4 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/tydbase/tydbase
+        - github.com/blivius/tydbase

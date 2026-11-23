@@ -19,9 +19,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
-	"github.com/tydbase/tydbase/engine/internal/driver"
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
-	"github.com/tydbase/tydbase/engine/internal/platform/httpx"
+	"github.com/blivius/tydbase/engine/internal/driver"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/platform/httpx"
 )
 
 // modules maps a --modules name to its route registration, in mount order.

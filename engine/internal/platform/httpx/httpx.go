@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
 )
 
 // New returns the router and the Huma API for TydBase.

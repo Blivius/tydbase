@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tydbase/tydbase/engine/internal/app"
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/app"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
 )
 
 // version is stamped at build time: -ldflags "-X main.version=<git describe>".

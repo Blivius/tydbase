@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const internalPrefix = "github.com/tydbase/tydbase/engine/internal/"
+const internalPrefix = "github.com/blivius/tydbase/engine/internal/"
 
 // owner returns the top-level unit under internal/ ("app", "platform", "driver", ...) or "" for
 // packages outside internal/ (cmd/...).

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tydbase/tydbase/engine/internal/app"
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/app"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
 )
 
 var testCfg = config.Config{Port: "8080", Env: "test", CORSOrigin: "http://localhost:3000", Version: "0.1.0-test"}

@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tydbase/tydbase/engine/internal/platform/config"
-	"github.com/tydbase/tydbase/engine/internal/platform/store"
-	"github.com/tydbase/tydbase/engine/internal/platform/vault"
+	"github.com/blivius/tydbase/engine/internal/platform/config"
+	"github.com/blivius/tydbase/engine/internal/platform/store"
+	"github.com/blivius/tydbase/engine/internal/platform/vault"
 )
 
 // Platform is the shared kernel modules are built from: the metadata DB and the secret vault.

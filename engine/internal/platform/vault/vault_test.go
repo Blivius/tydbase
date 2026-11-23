@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tydbase/tydbase/engine/internal/platform/store"
-	"github.com/tydbase/tydbase/engine/internal/platform/vault"
+	"github.com/blivius/tydbase/engine/internal/platform/store"
+	"github.com/blivius/tydbase/engine/internal/platform/vault"
 )
 
 const (

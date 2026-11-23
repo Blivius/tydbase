@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tydbase/tydbase/engine/internal/platform/store"
+	"github.com/blivius/tydbase/engine/internal/platform/store"
 )
 
 func TestOpenMigratesAndSetsPragmas(t *testing.T) {
