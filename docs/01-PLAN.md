@@ -3,7 +3,7 @@
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ · Phase 0.5 ✅ (2026-11-22: CI + Security green, tydbase.blivius.com live on Vercel) · Phase 1 ← current (M1 ✅, M2 next)**
+Status: **Pre-Phase ✅ · Phase 0 ✅ · Phase 0.5 ✅ (2026-11-22: CI + Security green, tydbase.blivius.com live on Vercel) · Phase 1 · M1 ✅ · Phase V ← current (2026-11-23: reposition + 14-day landing test; product code paused, decision 5.9)**
 
 ---
 
@@ -67,123 +67,103 @@ reachable on their host ports.
 
 ---
 
-## Phase 1 — Local workspace
 
-**Goal:** `tydbase start` is a useful Postgres client in the browser.
+## Phase V — Reposition and validate (2026-11-23)
 
-**Non-goals:** auth, multi-user, engines other than Postgres, MCP, writes, SSH tunnels.
+**Goal:** find out, in 14 days and before more product code, whether small teams want safe database
+access for their coding agents (decision 1.2). The repositioned page is the test.
+
+**Non-goals:** engine work. P1 · M1 (store + vault) is kept as it is.
 
 | Milestone | Scope |
 |---|---|
-| M1 Store + vault | `platform/store`: SQLite WAL + foreign keys + embedded goose (`workspaces`, `connections`, `saved_queries`, `query_audit`). `platform/vault`: AES-256-GCM envelope with KEK from env or `master.key`. Server boots the platform; Docker data volume `/data` |
-| M2 Driver + pool | `Driver` interface (`Ping`, `Introspect`, `Execute`); pgx/v5 driver with READ ONLY tx, `statement_timeout`, row/byte caps and `truncated` flag; pool keyed by (workspace, connection) with idle TTL (`synctest` tests); testcontainers |
-| M3 Workspace API | Connections CRUD + test, schema, query, saved queries (sqlc via `engine/tools/go.mod`, generated into `workspace/internal/store`); router changes (no CORS, per-route deadlines, `RealIP` only behind `TYDBASE_TRUSTED_PROXY`, `WriteTimeout: 0`); SDK regen |
-| M4 SPA + embed | `apps/web` (Vite, TanStack Router, Tailwind 4, `@tydbase/ui`, `@tydbase/sdk`, `@tanstack/react-virtual`); CodeMirror editor moved to `packages/ui`; `internal/webui` with SPA fallback; `start` on 127.0.0.1:4800; image builds web first; TanStack skills wired in |
+| V0 Docs + public repo | This plan, decisions 1.1–1.3 and 5.1–5.9, CLAUDE.md, README, hub blueprint. Repo transferred to `github.com/blivius/tydbase` (two org owners, branch protection); Go module path `github.com/blivius/tydbase/engine`; full-history gitleaks scan; then public |
+| V1 Landing page | Hallmark full redesign in TydBase's own tokens plus Blivius family markers (Newsreader serif, 2px section rules, "TydBase by Blivius" lockup). Hero: the live caught write, a real PGlite transaction showing the row diff and a teammate approval. Sections: problem, how a write gets through (agent / teammate / admin), what exists today (open source, plugins, honest status table), FAQ led by "why not just a read-only role?", closing form. Two-step waitlist: email, then team size + "what worries you". `?ref=` channel tags. PostHog behind a same-origin `/ingest` proxy, off without a key. The old multi-engine playground, architecture, pricing, problem story and `/demo` are deleted |
+| V2 Launch + measure | Posts drafted for Moeen to publish: an Ask HN asked as a real question, two Reddit posts (sidebars read first), one X thread. A 20-minute call script. Daily replies to worry stories. Day 14: score the kill criteria and record the outcome here and in decision 5.9 |
 
-**Acceptance:** run the Docker image and the `start` binary against seeded Postgres and confirm:
-- you can browse the schema;
-- a 10k-row result scrolls smoothly;
-- `INSERT` is rejected;
-- `pg_sleep(60)` is cut off by the timeout;
-- the stored secret is ciphertext and still decrypts after a restart.
+**Exit (kill criteria, all within 14 days of the first post):**
+- at least 10 signups describe a real worry in free text;
+- at least 3 people book a 20-minute call;
+- at least half of those stories come from teams of two or more.
 
----
+Miss any one and TydBase is parked; M1 stays in the repo.
 
-## Phase 2 — Local governed MCP
-
-**Goal:** Claude, Codex, Gemini and Cursor query databases through TydBase with zero credentials in
-`mcp.json`.
-
-**Non-goals:** HTTP MCP, OAuth, mutations, approvals.
-
-**Scope:**
-- `internal/mcp`, using go-sdk over stdio and reading the store and vault in-process.
-- Tools: `list_connections`, `search_schema`, `describe_object`, `execute_read_query`, `explain_query`.
-- Every UI and MCP query is written to `query_audit`, and the SPA has an audit view.
-- `tydbase mcp install --client claude|codex|gemini|cursor`.
-
-**Acceptance:** real Claude Code lists, searches and queries seeded Postgres through `tydbase mcp`,
-and every call shows up in the audit view.
+**Test area:** the page at 1280×800, 1920 and 390; the caught-write demo (run, approve, reject,
+re-run, WASM failure); the form in every state including step 2, 429 and 503; PostHog requests
+same-origin; 0 console errors and no CSP violations.
 
 ---
 
-## Phase 3 — Server mode + auth
+## Phase 1 — Team server MVP (Postgres), starts only if Phase V passes
 
-**Goal:** a self-hosted team instance.
+**Goal:** a small team self-hosts one TydBase server. Each person's coding agent reads Postgres
+through the CLI with no password on its machine, and an agent's write runs only after a teammate has
+seen the row diff and approved it. Everything is audited with the person and the agent.
 
-**Non-goals:** GitHub/Google OAuth, OAuth 2.1, Postgres metadata, billing.
+**Non-goals:** web UI, MCP, login screens or OAuth, engines other than Postgres, SSH tunnels,
+TulipTech projects (until the IP letter exists).
 
-**Scope:**
-- `tydbase server` with `internal/identity`: users, sessions, members, argon2id.
-- HttpOnly SameSite=Lax cookie and `http.CrossOriginProtection`.
-- Workspace-scoped middleware (actor from context only, zero IDOR).
-- Roles: Owner, Admin, Editor, Viewer.
-- SSRF dialer in `server` mode only.
-- Streamable HTTP `/mcp` with personal access tokens.
+| Milestone | Scope |
+|---|---|
+| M1 Store + vault ✅ | `platform/store`: SQLite WAL + foreign keys + embedded goose. `platform/vault`: AES-256-GCM envelope with KEK from env or `master.key`. Server boots the platform; Docker data volume `/data` |
+| M2 Driver | `Driver` interface with capability flags (`Explain`, `ColumnOrigins`, `DryRun`; decision 5.8). Postgres via pgx/v5: READ ONLY tx, `statement_timeout`, `idle_in_transaction_session_timeout`, row/byte caps with `truncated`, EXPLAIN JSON, column origins (table OID + attnum). Dry-run writes: `BEGIN`, capture before rows + `xmin`, run with `RETURNING`, `ROLLBACK`. Pool keyed by connection with idle TTL (`synctest`). Tests against `compose.dbs.yml` |
+| M3 Server core | `tydbase server`; `internal/workspace` (connections, secret via vault, sqlc via `engine/tools/go.mod`); `internal/identity` (people and agents such as `ana/claude-code`, hashed tokens, admin bootstrapped from the CLI); `internal/policy`, one pipeline for every query: EXPLAIN → scope + cost check → execute → mask → audit. Masking defaults for sensitive column names plus explicit `table.column`. Hash-chained audit with person and agent |
+| M4 Writes + approvals | `internal/approval`: propose → stored dry-run diff → approve or reject by a different person (self-approval refused) → apply, aborting if any `xmin` changed → audit. Webhook notifier: generic JSON plus Slack and Teams (Workflows) payload shapes |
+| M5 CLI + skill | `tydbase login \| query \| describe \| propose \| approve \| status`, output sized for LLM context, errors that tell the agent how to fix the query, results fenced as untrusted data. `tydbase skill install --client claude\|codex\|cursor` writes the skill or AGENTS.md snippet with no credentials |
+| M6 TUI | Bubble Tea v2 client of the server API: connections, policy, approval queue with diffs, audit tail. Works at 80×24; teatest coverage |
+| M7 Beta release | GoReleaser (darwin/linux, arm64/amd64), Homebrew tap, Docker image, getting-started doc. Onboard the first waitlist teams, then Show HN |
 
-**Acceptance:** with 2 users and 2 workspaces running in Docker:
-- cross-workspace reads return 404;
-- a Viewer cannot edit connections;
-- HTTP MCP works with a PAT and is audited.
-
----
-
-## Phase 4 — Engines
-
-**Goal:** all four paradigms.
-
-**Non-goals:** Qdrant and other Tier-2 engines.
-
-**Scope:**
-- MySQL/MariaDB, SQLite/LibSQL and MSSQL drivers.
-- MongoDB document explorer, Redis key browser, and pgvector similarity view.
-- SSH tunnel dialer.
-
-**Acceptance:** one shared driver test suite passes for every engine against `compose.dbs.yml`
-(testcontainers in CI).
+**Acceptance:** two people and two agent tokens on Docker against seeded Postgres:
+- an agent reads through the CLI with no database password anywhere on its machine;
+- a denied table is invisible to `describe` and rejected in queries;
+- a masked column comes back masked, including through an alias;
+- a cross join over the cost limit is rejected before it runs; `pg_sleep(60)` is cut off;
+- a write is held with its diff, self-approval is refused, a teammate approves, and it applies;
+- a row changed between approval and apply aborts the write;
+- the webhook reaches a Slack and a Teams channel;
+- the audit hash chain verifies;
+- at least one outside beta team uses it on a real staging database.
 
 ---
 
-## Phase 5 — Approvals + Copilot
+## Phase 2 — Web surface (what beta teams ask for first)
 
-**Goal:** safe AI writes.
+**Goal:** the first web surface, chosen from beta feedback. Expected first: an approval page linked
+from the webhook message (diff, Approve, Reject), then the workspace views.
 
-**Non-goals:** managed AI credits.
+**Scope:** sessions and roles (Owner, Admin, Member) with HttpOnly SameSite=Lax cookies and
+`http.CrossOriginProtection`; workspace-scoped middleware (zero IDOR); `apps/web` (Vite, TanStack
+Router, `@tydbase/ui`, `@tydbase/sdk`) embedded via `internal/webui`; router changes (no CORS,
+per-route deadlines, `RealIP` only behind `TYDBASE_TRUSTED_PROXY`, `WriteTimeout: 0`); SDK regen.
 
-**Scope:**
-- `propose_mutation` feeding an approval state machine (`internal/approval`).
-- SSE notifications and an approval UI.
-- BYOK copilot (Anthropic, OpenAI, Gemini, Ollama).
-
-**Acceptance:** an AI proposes an UPDATE, a human approves it, it runs, and it is audited end to end.
-
----
-
-## Phase 6 — Relay + Cloud
-
-**Goal:** the paid product.
-
-**Non-goals:** SSO/SAML, SCIM.
-
-**Scope:**
-- `tydbase agent` WSS relay (`internal/relay`).
-- Postgres metadata backend, which unlocks multi-container `--modules`.
-- GitHub OAuth, and OAuth 2.1 for remote MCP.
-- Billing, and `app.tydbase.blivius.com`.
-
-**Acceptance:** Cloud reaches a laptop's Docker DB through the agent with zero open inbound ports.
+**Acceptance:** written at the start of the phase from beta feedback.
 
 ---
 
-## Phase 7 — WASM, team, GA
+## Phase 3 — Adapters and engines
 
-**Goal:** launch.
+**Scope:** a thin MCP adapter (go-sdk, stdio and Streamable HTTP with tokens) over the same
+pipeline; the out-of-process plugin protocol (gRPC) with SQLite/LibSQL as plugin #2, then MySQL and
+MariaDB in the order teams ask; the SSH tunnel dialer.
 
-**Scope:**
-- wazero PII masker and SQL guardrail plugins.
-- Invites and RBAC UI, `Cmd+K`, and the audit viewer.
-- Fumadocs docs site and DuckDB-Wasm in the playground.
-- GoReleaser + Homebrew, a release workflow, and `CHANGELOG.md`.
-- Cutover to `tydbase.com`.
+**Acceptance:** one shared driver suite passes per engine against `compose.dbs.yml`
+(testcontainers in CI); the MCP adapter is driven from a real client.
 
-**Acceptance:** the GA checklist (written at the start of the phase).
+---
+
+## Phase 4 — Cloud
+
+**Scope:** `tydbase agent` outbound WSS relay; the SSRF-guarded dialer (multi-tenant only); Postgres metadata backend (unlocks multi-container
+`--modules`); GitHub OAuth; billing; `app.tydbase.blivius.com`.
+
+**Acceptance:** Cloud reaches a team's private Postgres through the agent with zero open inbound
+ports.
+
+---
+
+## Phase 5 — GA
+
+**Scope:** invites and RBAC UI, audit export and retention, docs site, `CHANGELOG.md` and release
+notes, cutover to `tydbase.com`.
+
+**Acceptance:** the GA checklist, written at the start of the phase.

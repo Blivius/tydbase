@@ -6,14 +6,17 @@ Standing brief for coding agents working in this repository. Read it first, ever
 
 ## What this is
 
-**TydBase** is an open-source database workspace and governed MCP gateway. You connect a database
-once, and then two things work: teammates get a zero-install browser workspace, and AI clients
-(Claude, Codex, Gemini, Cursor) get one policy-governed MCP endpoint. DB passwords never touch a
-laptop or an `mcp.json`. Self-hosting is Apache-2.0 and free forever. Revenue comes only from managed
-TydBase Cloud.
+**TydBase by Blivius** is safe database access for a small team's AI coding agents. A team
+self-hosts one TydBase server that holds the database credentials and the policy. Each person's
+agent (Claude Code, Codex, Cursor) reaches the database through the `tydbase` CLI and a skill, with a
+token, never the password. Reads are scoped and masked; a write runs as a dry run and waits for a
+teammate to approve the row diff; every query is audited with the person and the agent. Humans use
+the terminal UI. Postgres first, other databases as plugins. Self-hosting is Apache-2.0 and free
+forever; revenue comes only from managed TydBase Cloud.
 
-The product is one Go binary (`tydbase`) with an embedded web UI. The marketing site and waitlist
-live in `apps/site` and deploy to Vercel at `tydbase.blivius.com`.
+**Current phase: V (decision 5.9).** Product code is paused while the repositioned landing page runs
+a 14-day demand test. The marketing site and waitlist live in `apps/site` and deploy to Vercel at
+`tydbase.blivius.com`. The repo lives at `github.com/blivius/tydbase`.
 
 **The owner is Moeen**, a senior engineer and the sole author. Assume fluency. Skip tutorials and go
 straight to the specific thing.
@@ -66,12 +69,13 @@ Business, pricing and GTM live outside the repo in the hub:
 | --- | --- |
 | JS/TS | Bun 1.4.4+ workspaces, Node 26.13.1 (`.nvmrc`). Never npm/pnpm/yarn |
 | Lint/format | `oxlint` + `oxfmt`. Never ESLint/Prettier. Go: `gofmt` + `golangci-lint` v2 |
-| Site | Next.js 16 (`apps/site`), Tailwind 4, `motion`, PGlite playground, Resend waitlist |
-| Web app | Vite + React 19 + TanStack Router SPA (`apps/web`), embedded into the Go binary |
+| Site | Next.js 16 (`apps/site`), Tailwind 4, PGlite caught-write demo, Resend two-step waitlist, PostHog (cookieless, `/ingest` proxy) |
+| TUI | Bubble Tea v2 + Bubbles + Lip Gloss (`charm.land/*/v2`), the P1 human interface. Tested with teatest |
+| Web app | Vite + React 19 + TanStack Router SPA (`apps/web`, P2), embedded into the Go binary |
 | Engine | Go (`engine/`): Huma v2 + Chi v5, OpenAPI 3.1, Scalar docs at `/docs` |
-| Metadata DB | SQLite via `modernc.org/sqlite` (pure Go, `CGO_ENABLED=0`), goose (library) + sqlc. Postgres metadata arrives with Cloud (P6) |
-| Target DBs | pgx/v5 first (P1), then MySQL/MariaDB, MSSQL, SQLite/LibSQL, MongoDB, Redis (P4) |
-| MCP | Official Go SDK `modelcontextprotocol/go-sdk` |
+| Metadata DB | SQLite via `modernc.org/sqlite` (pure Go, `CGO_ENABLED=0`), goose (library) + sqlc. Postgres metadata arrives with Cloud (P4) |
+| Target DBs | Postgres via pgx/v5 (P1). Others as out-of-process plugins from P3, SQLite/LibSQL first |
+| MCP | Official Go SDK `modelcontextprotocol/go-sdk`, a thin adapter (P3) |
 | SDK | `packages/sdk`: openapi-typescript + openapi-fetch, generated from `engine/openapi.json` |
 | Email | Resend via direct `fetch` with `AbortSignal.timeout` and `Idempotency-Key`. Never Loops |
 | License | Apache-2.0 |
@@ -99,20 +103,25 @@ task dbs:down    # stop + wipe; seeds re-run on next start
 ## Architecture in one page
 
 ```
-browser (apps/web SPA, embedded) ─┐
-AI client (MCP stdio / HTTP) ─────┼─► tydbase binary
+agent → tydbase CLI + skill ──────┐
+human → tydbase TUI ──────────────┼─► tydbase server
+browser (apps/web, P2) ───────────┤
+MCP adapter (P3) ─────────────────┘
                                   │     internal/app        composition root, picks modules per mode
                                   │     internal/platform   config, httpx, store (sqlite), vault, log
-                                  │     internal/<module>   workspace, driver, mcp, identity, approval, relay ...
+                                  │     internal/<module>   workspace, driver, policy, identity, approval ...
                                   │
                                   └─► target databases (direct TLS, SSH tunnel, or relay agent)
 ```
 
 Binary modes:
-- `tydbase start` binds 127.0.0.1:4800, runs the local workspace with an implicit owner, and keeps its data dir in `os.UserConfigDir()/tydbase`.
-- `tydbase server` runs the self-host/Cloud server with auth (P3+). `--modules=` mounts a subset.
-- `tydbase mcp` runs local stdio MCP (P2).
-- `tydbase agent` runs the outbound relay (P6).
+- `tydbase server` runs the team server: credentials, policy, approvals, audit (P1). `--modules=` mounts a subset.
+- `tydbase login | query | describe | propose | approve | status` is the CLI agents and people call (P1).
+  `tydbase skill install --client claude|codex|cursor` writes the agent skill.
+- `tydbase` with no arguments opens the TUI, a client of the server: connections, policy, approvals, audit (P1).
+- `tydbase mcp` is a thin adapter over the same pipeline (P3).
+- The server keeps its data in `TYDBASE_DATA_DIR` (default `os.UserConfigDir()/tydbase`).
+- `tydbase agent` runs the outbound relay (P4).
 - `tydbase openapi`, `version` and `healthcheck` are utilities.
 
 **Modular monolith.** Each module lives in `engine/internal/<module>/` and exposes a constructor plus
@@ -126,13 +135,13 @@ Each module queries only its own tables.
 ## Where things live
 
 ```
-apps/site/            marketing site, PGlite playground, /demo, waitlist API (Vercel)
-apps/web/             workspace SPA (P1), built into engine/internal/webui/dist
-packages/ui/          tokens.css, logo, shared components (CodeMirror SQL editor)
+apps/site/            marketing site, caught-write demo, two-step waitlist API, PostHog proxy (Vercel)
+apps/web/             workspace SPA (P2), built into engine/internal/webui/dist
+packages/ui/          tokens.css, logo, shared components (CodeMirror SQL editor from P2)
 packages/sdk/         generated TS client — never edit schema.d.ts by hand
-packages/wasm-playground/  PGlite hook + seed for the site
+packages/wasm-playground/  PGlite caught-write demo hook + seed for the site
 packages/config/      shared tsconfig
-engine/               Go module github.com/tydbase/tydbase/engine
+engine/               Go module github.com/blivius/tydbase/engine
   cmd/tydbase/        thin main
   internal/app/       composition root: module registry, health route, boundaries_test.go
   internal/platform/  shared kernel: config, httpx (router + Huma API), store (SQLite + goose
@@ -153,7 +162,9 @@ Run these in order for every milestone:
 3. `node ~/.claude/skills/hallmark/scripts/sloplint.mjs apps/site/src apps/web/src`
 4. Docker: develop against `task up` (hot reload), then verify the milestone on `task up:prod`
    (production builds). Containers are healthy and logs are clean.
-5. Chrome (claude-in-chrome): every entry point and state, 390px, Scalar `/docs` renders, 0 console errors.
+5. Chrome (claude-in-chrome) for web surfaces: every entry point and state, 390px, Scalar `/docs` renders,
+   0 console errors. TUI: run it in a real terminal at 80×24 and full size, every screen and state, plus
+   teatest coverage. CLI + skill: drive it from a real agent (Claude Code, Codex), not only unit tests.
 6. Write numbered manual test steps for Moeen, give the handover, and stop.
 
 ### Handover format
@@ -228,8 +239,8 @@ Animation and layout rules:
 - **A Postgres `READ ONLY` transaction is not a sandbox.** It blocks writes, but not `pg_sleep`,
   `pg_terminate_backend`, `dblink`, or expensive scans. `statement_timeout` plus row/byte caps are
   mandatory on every execute. Docs must tell users to connect with a least-privilege role.
-- **The SSRF-guarded dialer runs in `server` mode only.** `start` exists to reach localhost DBs, so
-  guarding it would break the product.
+- **The SSRF-guarded dialer is for multi-tenant Cloud only (P4).** A self-hosted server exists to
+  reach the team's private databases, so guarding it would break the product.
 - **The distroless image has no shell, curl or wget.** The Docker HEALTHCHECK is
   `tydbase healthcheck`.
 - **`go:embed all:dist` needs at least one file.** Keep `engine/internal/webui/dist/.gitkeep`
@@ -237,10 +248,17 @@ Animation and layout rules:
 - **Module boundaries are invisible to `go build` and `go vet`.** A cross-module import compiles fine.
   Only `internal/app/boundaries_test.go` catches it, and only with `-count=1`, because the test cache
   ignores other packages' sources.
-- **`server --modules=` across several containers needs the Postgres metadata backend (P6).** SQLite
+- **`server --modules=` across several containers needs the Postgres metadata backend (P4).** SQLite
   cannot be shared between processes on different hosts.
 - **Huma's Scalar renderer loads its JS from unpkg.** An air-gapped self-host sees a blank `/docs`
   page while the API keeps working.
+- **The dev site container loads the real Resend key from `apps/site/.env`.** Submitting the waitlist
+  in `task up` creates a real contact and sends real email. Test form states with `fetch` stubbed for
+  `/api/waitlist`, or blank the key; never submit a real address without asking.
+- **Step 2 of the waitlist PATCHes Resend contact properties `team_size` and `worry`, and step 1 sets
+  `source`.** All three must exist in Resend → Contacts → Properties, or Resend rejects the call.
+- **PostHog only loads with `NEXT_PUBLIC_POSTHOG_KEY`, and cookieless events are dropped unless
+  cookieless mode is switched on in the PostHog project settings.** Both are build-time on Vercel.
 - **Vercel's filesystem is read-only.** The waitlist's JSON fallback is dev-only, and production
   without `RESEND_API_KEY` must fail with 503, not lose signups.
 - **Docker build contexts are the repo root, and `.dockerignore` patterns are anchored there.** A bare

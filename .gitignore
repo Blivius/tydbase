@@ -44,3 +44,6 @@ graphify-out/
 
 # air hot-reload build output
 engine/tmp/
+
+# Hallmark design-run records (local)
+.hallmark/

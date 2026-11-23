@@ -1,28 +1,33 @@
 # TydBase
 
-A database workspace and governed MCP gateway. Connect a database once: your team gets a browser
-workspace, and AI clients (Claude, Codex, Gemini, Cursor) get one MCP endpoint with read-only
-guards, an audit log and write approvals. Database passwords stay off laptops and out of
-`mcp.json`.
+Safe database access for your team's AI coding agents, by [Blivius](https://blivius.com).
 
-Self-hosting is free under Apache-2.0, with every feature included. Managed TydBase Cloud is how
-the project pays for itself.
+A team self-hosts one TydBase server that holds the database credentials and the rules. Each
+person's agent (Claude Code, Codex, Cursor) reaches Postgres through the `tydbase` CLI and a skill,
+with its own token and never the password. Reads are scoped and masked. A write runs as a dry run
+and waits until a teammate has seen the row diff and approved it. Every query is recorded with the
+person and the agent who ran it. Humans use a terminal UI. Postgres comes first; other databases
+arrive as plugins.
 
-> **Status: early.** What runs today is the marketing site with an in-browser PostgreSQL playground,
-> and an engine that serves health, the database engine catalog and its OpenAPI spec. The
-> workspace, drivers, MCP server, auth and relay land phase by phase: see
-> [`docs/01-PLAN.md`](docs/01-PLAN.md).
+Self-hosting is free under Apache-2.0, with every feature included. A managed TydBase Cloud comes
+later.
+
+> **Status: validating.** Before building further, we're checking that teams want this: see
+> [`docs/01-PLAN.md`](docs/01-PLAN.md) (Phase V). What exists today is the encrypted credential
+> vault and metadata store, an engine that serves health, the engine catalog and its OpenAPI spec,
+> and the site at [tydbase.blivius.com](https://tydbase.blivius.com). The driver, server, approvals,
+> CLI and TUI are planned, not built.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
 | `engine/` | The Go binary `tydbase` (Huma v2 + Chi). A modular monolith: `internal/app` wires modules, `internal/platform` is shared, and each module lives in `internal/<name>` |
-| `apps/site/` | Landing page, PGlite playground, MCP guardrail simulator, `/demo`, and the Resend waitlist (`tydbase.blivius.com`) |
-| `apps/web/` | The workspace SPA, embedded into the binary (Phase 1) |
+| `apps/site/` | Landing page with the in-browser caught-write demo (PGlite) and the two-step Resend waitlist (`tydbase.blivius.com`) |
+| `apps/web/` | The workspace SPA, embedded into the binary (Phase 2) |
 | `packages/sdk/` | TypeScript client generated from `engine/openapi.json` |
 | `packages/ui/` | Design tokens and shared components |
-| `packages/wasm-playground/` | PGlite hook and seed data for the site |
+| `packages/wasm-playground/` | PGlite caught-write demo hook and seed data for the site |
 | `docs/` | Decisions and the phase plan |
 
 ## Develop
