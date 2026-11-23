@@ -13,7 +13,7 @@ builds are not patched.
 **Do not open a public issue, discussion or pull request for a vulnerability.**
 
 Report it privately through
-[GitHub private vulnerability reporting](https://github.com/neeomdumham/tydbase/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/blivius/tydbase/security/advisories/new).
 
 Include what you can of:
 

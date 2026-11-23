@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/neeomdumham/tydbase/security/advisories/new
+    url: https://github.com/blivius/tydbase/security/advisories/new
     about: Report privately, never in an issue.
