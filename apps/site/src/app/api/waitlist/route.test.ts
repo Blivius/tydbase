@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { existsSync, rmSync } from "node:fs";
 import path from "node:path";
+import { BOOKING_URL } from "@/lib/links";
 import { POST } from "./route";
 
 const localStoreFile = path.join(process.cwd(), ".waitlist-dev.json");
@@ -146,7 +147,13 @@ describe("POST /api/waitlist", () => {
     ).toMatchObject({
       to: ["team@kestrelpay.io"],
       reply_to: "hello@example.dev",
+      text: expect.stringContaining(BOOKING_URL),
+      html: expect.stringContaining(`href="${BOOKING_URL}"`),
     });
+    // Replying to the notification answers the person who signed up.
+    expect(
+      emails.find((c) => c.idempotencyKey === "tydbase-waitlist-notify-team@kestrelpay.io")?.body
+    ).toMatchObject({ to: ["team@example.dev"], reply_to: "team@kestrelpay.io" });
   });
 
   test("step 2: patches team size and worry onto the contact and forwards them to the team", async () => {
@@ -171,6 +178,7 @@ describe("POST /api/waitlist", () => {
     });
     expect(resend.calls[1]?.idempotencyKey).toBe("tydbase-waitlist-details-lead@kestrelpay.io");
     expect(JSON.stringify(resend.calls[1]?.body)).toContain("Claude Code on staging");
+    expect(resend.calls[1]?.body).toMatchObject({ reply_to: "lead@kestrelpay.io" });
   });
 
   test("step 2 validation: unknown team size and an over-long worry are 400s", async () => {

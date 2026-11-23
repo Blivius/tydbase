@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BOOKING_URL } from "@/lib/links";
 
 // Resend REST client for the waitlist. Step 1 creates one global contact per email (optional
 // segment, `source` property) and sends a confirmation plus a team notification. Step 2 patches the
@@ -29,6 +30,35 @@ export interface ResendConfig {
   replyTo?: string | undefined;
   segmentId?: string | undefined;
 }
+
+// The confirmation is written as a personal note, so the reply rate is the point. The HTML part only
+// adds the booking button; email clients can't read OKLCH, so the accent is its sRGB approximation.
+const SITE_URL = "https://tydbase.blivius.com";
+const CONFIRMATION_PARAGRAPHS = [
+  "Thanks for joining the TydBase beta list.",
+  "TydBase is a server your team runs between your coding agents and Postgres. Each agent gets a token instead of the password, reads are scoped and masked, and every write waits for a teammate to approve the row diff.",
+  "We're choosing the first beta teams by hand, so it helps to know how you work today. Hit reply and tell me which agent touches which database, and what you'd hate for it to do. Or, if talking is easier, book 20 minutes with me:",
+];
+const CONFIRMATION_CLOSING = "The self-hosted server will be Apache-2.0 and free.";
+
+const CONFIRMATION_EMAIL = {
+  subject: "You're on the TydBase beta list",
+  text: [
+    "Hi,",
+    ...CONFIRMATION_PARAGRAPHS,
+    BOOKING_URL,
+    CONFIRMATION_CLOSING,
+    `Moeen\nTydBase by Blivius\n${SITE_URL}`,
+  ].join("\n\n"),
+  html: `<div style="max-width:560px;margin:0 auto;padding:32px 24px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#16211c">
+<p style="margin:0 0 28px;font-size:16px;font-weight:700">TydBase <span style="font-weight:400;color:#5b6b63">by Blivius</span></p>
+<p style="margin:0 0 16px">Hi,</p>
+${CONFIRMATION_PARAGRAPHS.map((p) => `<p style="margin:0 0 16px">${p}</p>`).join("\n")}
+<p style="margin:0 0 24px"><a href="${BOOKING_URL}" style="display:inline-block;padding:11px 18px;background:#3fcf93;color:#07140e;border-radius:2px;font-weight:600;text-decoration:none">Book 20 minutes</a></p>
+<p style="margin:0 0 24px">${CONFIRMATION_CLOSING}</p>
+<p style="margin:0;padding-top:16px;border-top:2px solid #e3e8e5">Moeen<br><a href="${SITE_URL}" style="color:#5b6b63">TydBase by Blivius</a></p>
+</div>`,
+};
 
 const resendErrorSchema = z.object({ name: z.string().optional(), message: z.string().optional() });
 
@@ -119,17 +149,7 @@ export async function joinWithResend(
         from: config.fromEmail,
         to: [signup.email],
         ...(config.replyTo ? { reply_to: config.replyTo } : {}),
-        subject: "You're on the TydBase beta list",
-        text: [
-          "You're on the TydBase beta list.",
-          "",
-          "TydBase gives your team's coding agents safe access to Postgres: they never hold the password, and every write waits for a teammate.",
-          "",
-          "We're choosing the first beta teams from this list. Reply to this email and tell us what your agents touch today; we read every answer.",
-          "",
-          "Self-hosted TydBase is Apache-2.0 and free.",
-          "TydBase by Blivius",
-        ].join("\n"),
+        ...CONFIRMATION_EMAIL,
       },
       `tydbase-waitlist-${signup.email}`
     ),
@@ -141,6 +161,7 @@ export async function joinWithResend(
         {
           from: config.fromEmail,
           to: [config.notifyEmail],
+          reply_to: signup.email,
           subject: `New TydBase beta signup: ${signup.email}`,
           text: [
             `Email: ${signup.email}`,
@@ -189,6 +210,7 @@ export async function saveDetails(config: ResendConfig, details: WaitlistDetails
         {
           from: config.fromEmail,
           to: [config.notifyEmail],
+          reply_to: details.email,
           subject: `TydBase beta answer: ${details.email}`,
           text: [
             `Email: ${details.email}`,
