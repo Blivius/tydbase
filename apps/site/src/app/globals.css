@@ -1,6 +1,10 @@
-/* Hallmark · custom · emerald-obsidian sharp · job: waitlist · nav: segmented architectural rail + primary action · footer: compact single-row colophon · hero: split-stage */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, stripped rounded SaaS pills, soft blurs, and top-nav teaser links so sharp Schibsted Grotesk geometry, live PGlite SQL, and the MCP approval gate carry the page */
-/* Hallmark · waive 85 · the founder requested a pre-launch beta waitlist landing page for tydbase.blivius.com · collecting early beta signups via Resend is the primary job of this page */
+/* Hallmark · shape: caught write (split-led product page) · genre: modern-minimal · theme: brand · redesign: full · job: sign up
+ * paper: oklch(11% 0.011 162) · accent: oklch(78% 0.15 160) · display: Schibsted Grotesk · body: Schibsted Grotesk · lead: Newsreader · hero: Stage · nav: edge-aligned (by-Blivius lockup left, source link and beta action right) · footer: mast · signature: the caught write, a real in-browser Postgres dry run held for a teammate
+ * axes: dark/grotesk-heavy/chromatic-emerald · posture: Restrained · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, the page argues "every write waits for a teammate", which some readers will call friction; kept it because the demo shows the wait costs one click */
+/* Hallmark · hero-review: fix · 5 findings · 3 resolved 2 dismissed (nav keeps the sign-up action per anatomy; on phones the form leads the plate) · finish-review: subagent · 7 findings · 6 resolved 1 partial (1920 and 375 not capturable: the window caps at the screen and a 500px minimum) · render tier not run (no puppeteer-core) */
+/* Hallmark · waive 85 · the user asked for a sign-up: a beta waitlist with an email-first form · the 14-day demand test counts these signups, so the close repeats the hero's email field */
+/* Hallmark · waive 47b · one frame per switcher panel, sample CLI, chat and TUI output inside · the terminal tools are the product being sold */
 
 @import "tailwindcss";
 @import "@tydbase/ui/tokens.css";
@@ -32,6 +36,7 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
   --font-mono: var(--font-mono);
+  --font-lead: var(--font-lead);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -147,7 +152,7 @@
     border-right: 1px solid var(--color-border);
     color: var(--color-ink-secondary);
     font-size: var(--text-label);
-    font-weight: 500;
+    font-weight: 400;
     white-space: nowrap;
     transition:
       color 150ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -210,7 +215,7 @@
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: var(--text-label);
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
     transition:
@@ -264,41 +269,132 @@
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
-    box-shadow: var(--shadow-panel);
   }
 
-  @keyframes tyd-packet-flow {
-    from {
-      stroke-dashoffset: 32;
-    }
-    to {
-      stroke-dashoffset: 0;
-    }
+  /* The one line under a head, in the Blivius family serif */
+  .tyd-lead {
+    font-family: var(--font-lead);
+    font-size: var(--text-lead);
+    line-height: 1.45;
+    color: var(--color-ink-secondary);
+    max-width: 46ch;
+    text-wrap: pretty;
   }
 
-  .tyd-packet-line {
-    stroke-dasharray: 6 10;
-    animation: tyd-packet-flow 1.4s linear infinite;
+  /* Blivius family marker: a 2px rule at container width opens a section, against the 1px
+     full-width hairlines at other seams */
+  .tyd-rule {
+    border-top: 2px solid var(--color-ink-muted);
   }
 
-  @keyframes tyd-cursor-blink {
-    0%,
-    49% {
-      opacity: 1;
-    }
-    50%,
-    100% {
-      opacity: 0;
-    }
+  .tyd-code {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    line-height: 1.65;
+    color: var(--color-ink);
+    white-space: pre;
+    overflow-x: auto;
   }
 
-  .tyd-cursor {
-    display: inline-block;
-    width: 0.45rem;
-    height: 1em;
-    vertical-align: -0.14em;
-    background-color: var(--color-accent);
-    animation: tyd-cursor-blink 1s step-end infinite;
+  .tyd-link {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tyd-link:hover {
+    text-decoration-color: var(--color-accent);
+  }
+
+  .tyd-input:focus-visible {
+    outline-offset: -1px;
+  }
+
+  .tyd-input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  .tyd-textarea {
+    height: auto;
+    min-height: 6rem;
+    padding-block: var(--space-3);
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  /* A choice between a few: the radio stays in the flow at 1px, the label carries state and ring */
+  .tyd-choice {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .tyd-choice input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .tyd-choice span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-muted);
+    border-radius: var(--radius-md);
+    color: var(--color-ink-secondary);
+    font-size: var(--text-label);
+    cursor: pointer;
+    transition:
+      background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tyd-choice span:hover {
+    color: var(--color-ink);
+    background-color: var(--color-surface-raised);
+  }
+
+  .tyd-choice input:checked + span {
+    background-color: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-ground);
+  }
+
+  .tyd-choice input:focus-visible + span {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .tyd-btn-text {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--space-2);
+    border: 0;
+    background: transparent;
+    color: var(--color-ink-secondary);
+    font-family: var(--font-body);
+    font-size: var(--text-label);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tyd-btn-text:hover:not(:disabled) {
+    color: var(--color-ink);
+  }
+
+  .tyd-btn-text:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .tyd-btn-text:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 }
 

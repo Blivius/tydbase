@@ -43,11 +43,14 @@
   --font-display: var(--font-schibsted), "Schibsted Grotesk", ui-sans-serif, sans-serif;
   --font-body: var(--font-schibsted), "Schibsted Grotesk", ui-sans-serif, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
+  /* Blivius family marker: Newsreader carries the one line under a head (blivius.com, Dispach) */
+  --font-lead: var(--font-newsreader), "Newsreader", Georgia, serif;
 
   /* Type scale */
   --text-hero: clamp(2.65rem, 4.6vw, 4.1rem);
   --text-section: clamp(2.15rem, 3.4vw, 3.05rem);
   --text-title: clamp(1.18rem, 1.5vw, 1.4rem);
+  --text-lead: clamp(1.18rem, 1.45vw, 1.35rem);
   --text-body: 1rem;
   --text-label: 0.875rem;
   --text-caption: 0.8125rem;
@@ -63,6 +66,7 @@
   --space-10: 4.5rem;
   --space-12: 6rem;
   --space-16: 8.5rem;
+  --space-20: 11rem;
 
   /* Sharp architectural radii (0px plates & rails, 2px micro-bevel controls) */
   --radius-sm: 0px;

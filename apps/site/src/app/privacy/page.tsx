@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // preview builds don't have at build time, so render per request.
 export const dynamic = "force-dynamic";
 
-const UPDATED = "22 November 2026";
+const UPDATED = "23 November 2026";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -42,22 +42,23 @@ export default function PrivacyPage() {
         <div className="max-w-3xl">
           <h1 className="tyd-section-head text-ink">Privacy</h1>
           <p className="mt-4 text-ink-secondary">
-            TydBase is a Blivius HQ project. This page covers tydbase.blivius.com: the beta waitlist
-            and the in-browser playground. Last updated {UPDATED}.
+            TydBase is a Blivius project. This page covers tydbase.blivius.com: the beta waitlist,
+            the in-browser demo and the site&apos;s analytics. Last updated {UPDATED}.
           </p>
 
           <div className="mt-8">
             <Section title="What the waitlist collects">
               <p>
-                Your email address. If you fill them in: your role or team size, the databases you
-                use, and the AI tools you want connected.
+                Your email address and which link brought you here (for example, a Hacker News or
+                Reddit post). If you answer the optional second step: your team size and what you
+                wrote about your agents and databases.
               </p>
             </Section>
 
             <Section title="Why">
               <p>
-                To send your beta invite and release notes, and to decide which database engines and
-                AI clients to support first. Nothing else. We don&apos;t sell or share it.
+                To send your beta invite and release notes, to pick the first beta teams, and to
+                decide what to build first. Nothing else. We don&apos;t sell or share it.
               </p>
             </Section>
 
@@ -69,15 +70,20 @@ export default function PrivacyPage() {
               </p>
             </Section>
 
-            <Section title="The playground">
+            <Section title="The demo">
               <p>
-                The SQL playground runs PostgreSQL inside your browser. The queries you type and
-                their results never leave your device.
+                The demo runs PostgreSQL inside your browser on sample data. Nothing it does leaves
+                your device.
               </p>
             </Section>
 
-            <Section title="Cookies and tracking">
-              <p>This site sets no cookies and runs no analytics or ad trackers.</p>
+            <Section title="Cookies and analytics">
+              <p>
+                This site sets no cookies and runs no ad trackers. It counts visits and a few
+                actions (approving in the demo, joining the list) with PostHog in cookieless mode:
+                no cookies or browser storage, and requests go through this site rather than
+                straight to PostHog. The answers you type are not sent to PostHog.
+              </p>
             </Section>
 
             <Section title="Removing your data">

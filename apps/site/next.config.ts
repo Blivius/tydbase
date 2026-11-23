@@ -28,8 +28,27 @@ const securityHeaders = [
     : []),
 ];
 
+// PostHog goes through this origin (/ingest), so ad blockers and the CSP's connect-src 'self' both
+// allow it. Asset rewrites must come before the catch-all (PostHog's Next.js proxy guide).
+const posthogRegion = process.env.NEXT_PUBLIC_POSTHOG_REGION?.trim() === "eu" ? "eu" : "us";
+
 const nextConfig: NextConfig = {
   output: "standalone",
+  // PostHog's API paths end in a slash (/e/, /flags/); Next would 308 them without this.
+  skipTrailingSlashRedirect: true,
+  rewrites() {
+    return Promise.resolve([
+      {
+        source: "/ingest/static/:path*",
+        destination: `https://${posthogRegion}-assets.i.posthog.com/static/:path*`,
+      },
+      {
+        source: "/ingest/array/:path*",
+        destination: `https://${posthogRegion}-assets.i.posthog.com/array/:path*`,
+      },
+      { source: "/ingest/:path*", destination: `https://${posthogRegion}.i.posthog.com/:path*` },
+    ]);
+  },
   transpilePackages: ["@tydbase/ui", "@tydbase/wasm-playground"],
   poweredByHeader: false,
   reactStrictMode: true,

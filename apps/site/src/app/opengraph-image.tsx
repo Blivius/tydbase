@@ -9,7 +9,7 @@ const INK = "#eef3f0";
 const INK_SECONDARY = "#abb4af";
 const ACCENT = "#4ad496";
 
-export const alt = "TydBase: one workspace and governed MCP gateway for every database";
+export const alt = "TydBase by Blivius: every agent write waits for a teammate";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -32,11 +32,11 @@ export default function OpengraphImage() {
         <div
           style={{ fontSize: 76, fontWeight: 700, color: INK, lineHeight: 1.05, letterSpacing: -2 }}
         >
-          One workspace for every database.
+          Every agent write waits for a teammate.
         </div>
         <div style={{ fontSize: 32, color: INK_SECONDARY, lineHeight: 1.35, maxWidth: 940 }}>
-          A browser workspace for your team and one governed MCP endpoint for Claude, Codex, Gemini
-          and Cursor. Self-host free under Apache-2.0.
+          Safe Postgres access for your team&apos;s coding agents. They never hold the password, and
+          a teammate approves every write. Self-hosted and open source.
         </div>
       </div>
       <div
@@ -49,7 +49,7 @@ export default function OpengraphImage() {
           color: INK_SECONDARY,
         }}
       >
-        <span>PostgreSQL, MySQL, MongoDB, Redis and pgvector</span>
+        <span>TydBase by Blivius</span>
         <span style={{ color: ACCENT }}>tydbase.blivius.com</span>
       </div>
     </div>,
