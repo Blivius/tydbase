@@ -3,14 +3,26 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { joinWithResend, type ResendConfig, type WaitlistSignup } from "./resend";
+import {
+  joinWithResend,
+  type ResendConfig,
+  saveDetails,
+  TEAM_SIZES,
+  type WaitlistDetails,
+  type WaitlistSignup,
+} from "./resend";
 
+// Step 1 sends { email, source }. Step 2 sends { email, teamSize?, worry? } for the same address.
 const waitlistSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Enter a valid work or personal email address."),
-  role: z.string().trim().max(80).optional(),
-  databases: z.array(z.string().trim().max(40)).max(10).optional(),
-  aiTools: z.array(z.string().trim().max(40)).max(10).optional(),
+  email: z.string().trim().toLowerCase().email("Enter an email address like name@company.com."),
   source: z.string().trim().max(60).optional(),
+  teamSize: z.enum(TEAM_SIZES, { message: "Pick one of the team sizes." }).optional(),
+  worry: z
+    .string()
+    .trim()
+    .max(1000, "Keep it under 1,000 characters.")
+    .transform((v) => v || undefined)
+    .optional(),
 });
 
 // ---- Rate limiting --------------------------------------------------------------------------
@@ -69,16 +81,17 @@ function warnOnPartialConfig(config: ResendConfig) {
 // ---- Local dev store (never used in production) -----------------------------------------------
 const localEntrySchema = z.object({
   email: z.string(),
-  role: z.string().optional(),
-  databases: z.array(z.string()),
-  aiTools: z.array(z.string()),
   source: z.string(),
+  teamSize: z.string().optional(),
+  worry: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 type LocalEntry = z.infer<typeof localEntrySchema>;
 
-async function upsertLocalEntry(signup: WaitlistSignup): Promise<{ alreadyJoined: boolean }> {
+async function upsertLocalEntry(
+  signup: WaitlistSignup & Omit<WaitlistDetails, "email">
+): Promise<{ alreadyJoined: boolean }> {
   const filePath = path.join(process.cwd(), ".waitlist-dev.json");
   let entries: LocalEntry[] = [];
   if (existsSync(filePath)) {
@@ -95,17 +108,15 @@ async function upsertLocalEntry(signup: WaitlistSignup): Promise<{ alreadyJoined
   const now = new Date().toISOString();
   const existing = entries.find((entry) => entry.email === signup.email);
   if (existing) {
-    existing.role = signup.role ?? existing.role;
-    if (signup.databases?.length) existing.databases = signup.databases;
-    if (signup.aiTools?.length) existing.aiTools = signup.aiTools;
+    existing.teamSize = signup.teamSize ?? existing.teamSize;
+    existing.worry = signup.worry ?? existing.worry;
     existing.updatedAt = now;
   } else {
     entries.push({
       email: signup.email,
-      role: signup.role,
-      databases: signup.databases ?? [],
-      aiTools: signup.aiTools ?? [],
       source: signup.source ?? "tydbase-waitlist",
+      teamSize: signup.teamSize,
+      worry: signup.worry,
       createdAt: now,
       updatedAt: now,
     });
@@ -145,32 +156,37 @@ export async function POST(request: Request) {
     );
   }
 
+  const { email, source, teamSize, worry } = parsed.data;
+  const isDetails = teamSize !== undefined || worry !== undefined;
+  const provider = config ? "resend" : "local-dev";
+
   try {
-    if (config) {
-      warnOnPartialConfig(config);
-      const { alreadyJoined } = await joinWithResend(config, parsed.data);
+    if (isDetails) {
+      if (config) await saveDetails(config, { email, teamSize, worry });
+      else await upsertLocalEntry({ email, teamSize, worry });
       return NextResponse.json(
-        {
-          ok: true,
-          alreadyJoined,
-          provider: "resend",
-          message: alreadyJoined
-            ? "You are already on the TydBase beta list."
-            : "Thanks! Bet, you won't regret it 😎",
-        },
-        { status: alreadyJoined ? 200 : 201 }
+        { ok: true, provider, message: "Thanks. We read every answer." },
+        { status: 200 }
       );
     }
 
-    const { alreadyJoined } = await upsertLocalEntry(parsed.data);
+    let alreadyJoined: boolean;
+    if (config) {
+      warnOnPartialConfig(config);
+      ({ alreadyJoined } = await joinWithResend(config, { email, source }));
+    } else {
+      ({ alreadyJoined } = await upsertLocalEntry({ email, source }));
+    }
     return NextResponse.json(
       {
         ok: true,
         alreadyJoined,
-        provider: "local-dev",
+        provider,
         message: alreadyJoined
-          ? "Already saved on the local beta list. Preferences updated."
-          : "Saved to the local beta waitlist.",
+          ? "You're already on the list."
+          : config?.fromEmail
+            ? "You're on the list. A confirmation email is on its way."
+            : "You're on the list.",
       },
       { status: alreadyJoined ? 200 : 201 }
     );

@@ -1,17 +1,25 @@
 import { z } from "zod";
 
-// Resend REST client for the waitlist: one contact per signup (global contact, optional segment,
-// answers as contact properties) plus a confirmation email and a notification to the team.
+// Resend REST client for the waitlist. Step 1 creates one global contact per email (optional
+// segment, `source` property) and sends a confirmation plus a team notification. Step 2 patches the
+// same contact with `team_size` and `worry` and forwards the answer to the team. All three contact
+// properties must exist in Resend → Contacts → Properties, or Resend rejects the call.
 
 const RESEND_API = "https://api.resend.com";
 const RESEND_TIMEOUT_MS = 8_000;
 
+export const TEAM_SIZES = ["solo", "2-10", "11-50", "50+"] as const;
+export type TeamSize = (typeof TEAM_SIZES)[number];
+
 export interface WaitlistSignup {
   email: string;
-  role?: string | undefined;
-  databases?: string[] | undefined;
-  aiTools?: string[] | undefined;
   source?: string | undefined;
+}
+
+export interface WaitlistDetails {
+  email: string;
+  teamSize?: TeamSize | undefined;
+  worry?: string | undefined;
 }
 
 export interface ResendConfig {
@@ -31,7 +39,7 @@ const RESEND_HINTS: Record<string, string> = {
   invalid_api_key: "RESEND_API_KEY is wrong or revoked. Create a new key in Resend → API Keys.",
   missing_api_key: "RESEND_API_KEY is empty.",
   validation_error:
-    "Check that RESEND_FROM_EMAIL uses your verified domain and that the contact properties role, databases and ai_tools exist in Resend → Contacts → Properties.",
+    "Check that RESEND_FROM_EMAIL uses your verified domain and that the contact properties source, team_size and worry exist in Resend → Contacts → Properties.",
   invalid_from_address: "RESEND_FROM_EMAIL must be an address on a domain verified in Resend.",
   rate_limit_exceeded: "Resend rate limit hit. Retry later or raise the limit.",
   daily_quota_exceeded: "The Resend daily sending quota is used up.",
@@ -54,9 +62,15 @@ async function resendError(res: Response, action: string): Promise<Error> {
   );
 }
 
-function resendFetch(apiKey: string, path: string, body: unknown, idempotencyKey?: string) {
+function resendFetch(
+  apiKey: string,
+  path: string,
+  body: unknown,
+  idempotencyKey?: string,
+  method: "POST" | "PATCH" = "POST"
+) {
   return fetch(`${RESEND_API}${path}`, {
-    method: "POST",
+    method,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -67,27 +81,12 @@ function resendFetch(apiKey: string, path: string, body: unknown, idempotencyKey
   });
 }
 
-function answerLines(signup: WaitlistSignup): string[] {
-  return [
-    signup.role ? `Role: ${signup.role}` : null,
-    signup.databases?.length ? `Databases: ${signup.databases.join(", ")}` : null,
-    signup.aiTools?.length ? `AI clients: ${signup.aiTools.join(", ")}` : null,
-  ].filter((line): line is string => line !== null);
-}
-
 /** Creates the contact. Returns alreadyJoined when Resend reports the contact exists. */
 async function createContact(config: ResendConfig, signup: WaitlistSignup): Promise<boolean> {
-  const properties = Object.fromEntries(
-    Object.entries({
-      role: signup.role,
-      databases: signup.databases?.join(", "),
-      ai_tools: signup.aiTools?.join(", "),
-    }).filter(([, value]) => value)
-  );
   const res = await resendFetch(config.apiKey, "/contacts", {
     email: signup.email,
     unsubscribed: false,
-    ...(Object.keys(properties).length > 0 ? { properties } : {}),
+    ...(signup.source ? { properties: { source: signup.source } } : {}),
     ...(config.segmentId ? { segments: [{ id: config.segmentId }] } : {}),
   });
   if (res.ok) return false;
@@ -113,7 +112,6 @@ export async function joinWithResend(
   const alreadyJoined = await createContact(config, signup);
   if (alreadyJoined || !config.fromEmail) return { alreadyJoined };
 
-  const lines = answerLines(signup);
   const sends = [
     sendEmail(
       config,
@@ -121,15 +119,16 @@ export async function joinWithResend(
         from: config.fromEmail,
         to: [signup.email],
         ...(config.replyTo ? { reply_to: config.replyTo } : {}),
-        subject: "You are on the TydBase private beta list",
+        subject: "You're on the TydBase beta list",
         text: [
-          "You are on the TydBase private beta waitlist.",
+          "You're on the TydBase beta list.",
           "",
-          "We are onboarding early teams in batches and prioritizing the database engines and MCP workflows requested most.",
-          ...(lines.length > 0 ? ["", ...lines] : []),
+          "TydBase gives your team's coding agents safe access to Postgres: they never hold the password, and every write waits for a teammate.",
           "",
-          "Self-hosted TydBase stays Apache-2.0 and free forever.",
-          "TydBase / Blivius HQ",
+          "We're choosing the first beta teams from this list. Reply to this email and tell us what your agents touch today; we read every answer.",
+          "",
+          "Self-hosted TydBase is Apache-2.0 and free.",
+          "TydBase by Blivius",
         ].join("\n"),
       },
       `tydbase-waitlist-${signup.email}`
@@ -146,17 +145,60 @@ export async function joinWithResend(
           text: [
             `Email: ${signup.email}`,
             `Source: ${signup.source ?? "tydbase.blivius.com"}`,
-            ...lines,
           ].join("\n"),
         },
         `tydbase-waitlist-notify-${signup.email}`
       )
     );
   }
-  for (const result of await Promise.allSettled(sends)) {
+  logRejected(await Promise.allSettled(sends));
+  return { alreadyJoined };
+}
+
+function logRejected(results: PromiseSettledResult<unknown>[]) {
+  for (const result of results) {
     if (result.status === "rejected") {
       console.error(result.reason instanceof Error ? result.reason.message : result.reason);
     }
   }
-  return { alreadyJoined };
+}
+
+/**
+ * Step 2: stores team size and the free-text worry on the contact and forwards them to the team.
+ * ponytail: unauthenticated, so anyone who knows an address can overwrite its answers. Acceptable
+ * for research data seen only by us; sign the step-1 response if it ever gates anything.
+ */
+export async function saveDetails(config: ResendConfig, details: WaitlistDetails): Promise<void> {
+  const properties = Object.fromEntries(
+    Object.entries({ team_size: details.teamSize, worry: details.worry }).filter(([, v]) => v)
+  );
+  const res = await resendFetch(
+    config.apiKey,
+    `/contacts/${encodeURIComponent(details.email)}`,
+    { properties },
+    undefined,
+    "PATCH"
+  );
+  if (!res.ok) throw await resendError(res, "update contact");
+
+  if (!config.fromEmail || !config.notifyEmail) return;
+  logRejected(
+    await Promise.allSettled([
+      sendEmail(
+        config,
+        {
+          from: config.fromEmail,
+          to: [config.notifyEmail],
+          subject: `TydBase beta answer: ${details.email}`,
+          text: [
+            `Email: ${details.email}`,
+            `Team size: ${details.teamSize ?? "not given"}`,
+            "",
+            details.worry ?? "(no worry written)",
+          ].join("\n"),
+        },
+        `tydbase-waitlist-details-${details.email}`
+      ),
+    ])
+  );
 }

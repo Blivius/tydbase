@@ -40,6 +40,7 @@ function request(body: unknown, headers: Record<string, string> = {}): Request {
 
 interface Call {
   url: string;
+  method: string;
   body: unknown;
   idempotencyKey: string | null;
 }
@@ -50,9 +51,17 @@ function mockResend(contactStatus = 201, contactBody: unknown = { object: "conta
   const fake = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = input instanceof Request ? input.url : input.toString();
     const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
-    calls.push({ url, body, idempotencyKey: new Headers(init?.headers).get("Idempotency-Key") });
+    calls.push({
+      url,
+      method: init?.method ?? "GET",
+      body,
+      idempotencyKey: new Headers(init?.headers).get("Idempotency-Key"),
+    });
     if (url.endsWith("/contacts")) {
       return new Response(JSON.stringify(contactBody), { status: contactStatus });
+    }
+    if (url.includes("/contacts/")) {
+      return new Response(JSON.stringify({ object: "contact", id: "c_1" }), { status: 200 });
     }
     return new Response(JSON.stringify({ id: "e_1" }), { status: 200 });
   };
@@ -81,9 +90,7 @@ describe("POST /api/waitlist", () => {
 
   test("local dev store: 201 for new, 200 for a case-insensitive duplicate", async () => {
     delete process.env.RESEND_API_KEY;
-    const first = await POST(
-      request({ email: "lead@northstar.dev", role: "Backend Lead", databases: ["PostgreSQL"] })
-    );
+    const first = await POST(request({ email: "lead@northstar.dev", source: "hero" }));
     expect(first.status).toBe(201);
     expect(await first.json()).toMatchObject({
       ok: true,
@@ -91,7 +98,7 @@ describe("POST /api/waitlist", () => {
       provider: "local-dev",
     });
 
-    const again = await POST(request({ email: "LEAD@northstar.dev", role: "Staff Engineer" }));
+    const again = await POST(request({ email: "LEAD@northstar.dev", source: "close" }));
     expect(again.status).toBe(200);
     expect(await again.json()).toMatchObject({ ok: true, alreadyJoined: true });
   });
@@ -106,32 +113,26 @@ describe("POST /api/waitlist", () => {
     expect(existsSync(localStoreFile)).toBe(false);
   });
 
-  test("Resend: contact with properties and segment, confirmation with reply_to, team notification", async () => {
+  test("Resend: contact with source and segment, confirmation with reply_to, team notification", async () => {
     useResend({
       RESEND_NOTIFY_EMAIL: "team@example.dev",
       RESEND_REPLY_TO: "hello@example.dev",
       RESEND_SEGMENT_ID: "seg_beta",
     });
     const resend = mockResend();
-    const res = await POST(
-      request({
-        email: "Team@KestrelPay.io",
-        role: "CTO",
-        databases: ["PostgreSQL", "Redis"],
-        aiTools: [],
-      })
-    );
+    const res = await POST(request({ email: "Team@KestrelPay.io", source: "hero?ref=hn" }));
     resend.restore();
 
     expect(res.status).toBe(201);
     expect(await res.json()).toMatchObject({ ok: true, provider: "resend", alreadyJoined: false });
     expect(resend.calls[0]).toEqual({
       url: "https://api.resend.com/contacts",
+      method: "POST",
       idempotencyKey: null,
       body: {
         email: "team@kestrelpay.io",
         unsubscribed: false,
-        properties: { role: "CTO", databases: "PostgreSQL, Redis" },
+        properties: { source: "hero?ref=hn" },
         segments: [{ id: "seg_beta" }],
       },
     });
@@ -146,6 +147,39 @@ describe("POST /api/waitlist", () => {
       to: ["team@kestrelpay.io"],
       reply_to: "hello@example.dev",
     });
+  });
+
+  test("step 2: patches team size and worry onto the contact and forwards them to the team", async () => {
+    useResend({ RESEND_NOTIFY_EMAIL: "team@example.dev" });
+    const resend = mockResend();
+    const res = await POST(
+      request({
+        email: "lead@kestrelpay.io",
+        teamSize: "2-10",
+        worry: "  Claude Code on staging  ",
+      })
+    );
+    resend.restore();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, provider: "resend" });
+    expect(resend.calls[0]).toEqual({
+      url: "https://api.resend.com/contacts/lead%40kestrelpay.io",
+      method: "PATCH",
+      idempotencyKey: null,
+      body: { properties: { team_size: "2-10", worry: "Claude Code on staging" } },
+    });
+    expect(resend.calls[1]?.idempotencyKey).toBe("tydbase-waitlist-details-lead@kestrelpay.io");
+    expect(JSON.stringify(resend.calls[1]?.body)).toContain("Claude Code on staging");
+  });
+
+  test("step 2 validation: unknown team size and an over-long worry are 400s", async () => {
+    delete process.env.RESEND_API_KEY;
+    const badSize = await POST(request({ email: "a@example.dev", teamSize: "huge" }));
+    expect(badSize.status).toBe(400);
+    const longWorry = await POST(request({ email: "a@example.dev", worry: "x".repeat(1001) }));
+    expect(longWorry.status).toBe(400);
+    expect(await longWorry.json()).toMatchObject({ message: "Keep it under 1,000 characters." });
   });
 
   test("Resend 409 duplicate: 200 alreadyJoined, no emails", async () => {
