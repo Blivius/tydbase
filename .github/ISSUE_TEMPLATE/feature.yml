@@ -1,26 +1,36 @@
 name: Feature request
-description: A concrete capability TydBase should have.
+description: Something TydBase should do that it does not.
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Check `docs/00-DECISIONS.md` and `docs/01-PLAN.md` first: it may be planned, or deliberately ruled out.
+        A new CLI command, API route, policy rule or webhook field changes a contract, so it is discussed before it is built. `docs/00-DECISIONS.md` lists what has been decided against and why, and `docs/01-PLAN.md` what is already planned; check both first.
   - type: textarea
     id: problem
     attributes:
       label: The problem
-      description: What you're trying to do, and what gets in the way today.
+      description: What you are trying to do, and what stops you today.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: What you'd like
-      description: The behaviour you want. A command, request or screen sketch helps.
+      label: What you propose
+      description: The change as you see it. A sketch of the command, query or config helps.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: What you do instead today
+      label: Alternatives
+      description: Workarounds you tried, or other ways to get there.
+    validations:
+      required: false
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I would like to work on this myself.
+          required: false

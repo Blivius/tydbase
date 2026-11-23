@@ -1,0 +1,19 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas and design questions start here; a concrete feature with an agreed shape becomes an issue. `docs/00-DECISIONS.md` lists what has been decided against and why.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you or your team are trying to do, and what gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: How TydBase could handle it. A sketch of the command, query or config helps.
+    validations:
+      required: true

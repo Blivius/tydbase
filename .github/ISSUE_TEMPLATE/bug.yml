@@ -25,16 +25,11 @@ body:
         - Marketing site or waitlist
     validations:
       required: true
-  - type: input
-    id: database
-    attributes:
-      label: Target database
-      description: Engine and version, if it matters (e.g. PostgreSQL 17 + pgvector).
   - type: textarea
     id: what-happened
     attributes:
       label: What happened
-      description: The command, request or steps, and the output or error, pasted in full.
+      description: The command, request or query, and the output or error, pasted in full.
       render: shell
     validations:
       required: true
@@ -42,5 +37,20 @@ body:
     id: expected
     attributes:
       label: What you expected
+      description: And where the docs say so, if they do.
     validations:
       required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The smallest steps or SQL that show it. Leave out passwords, tokens and real customer data.
+    validations:
+      required: false
+  - type: input
+    id: database
+    attributes:
+      label: Target database
+      description: Engine and version, if it matters, for example `PostgreSQL 17 + pgvector`.
+    validations:
+      required: false

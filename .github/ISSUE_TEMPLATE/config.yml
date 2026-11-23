@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Question or idea
+    url: https://github.com/blivius/tydbase/discussions
+    about: Ask in Discussions; an issue is for a bug or a concrete feature.
   - name: Security vulnerability
     url: https://github.com/blivius/tydbase/security/advisories/new
     about: Report privately, never in an issue.
+  - name: Plan and decisions
+    url: https://github.com/blivius/tydbase/tree/main/docs
+    about: What is being built next, and what has been ruled out and why.

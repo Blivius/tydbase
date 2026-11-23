@@ -1,0 +1,15 @@
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What you are trying to do, and what you tried. Leave out passwords, tokens and real customer data.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `tydbase version` or the image tag, if it matters.
+    validations:
+      required: false
