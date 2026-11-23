@@ -1,45 +1,32 @@
 name: Site
 
-# The landing page (`apps/site`) on Vercel, deployed with a token rather than Vercel's Git
-# integration (switched off in `apps/site/vercel.json`), so a deploy happens only when this runs.
-# The Vercel project's Root Directory is `apps/site`; `.vercelignore` keeps the engine and docs out
-# of the upload.
+# The landing page (`apps/site`) on Vercel, deployed only when someone runs this workflow (Actions →
+# Site → Run workflow, or `gh workflow run site.yml -R blivius/tydbase`). Nothing deploys on a push:
+# Vercel's Git integration is switched off in `apps/site/vercel.json`. The Vercel project's Root
+# Directory is `apps/site`; `.vercelignore` keeps the engine and docs out of the upload.
 #
-#   push to main         → production (tydbase.blivius.com)
-#   pull request         → a preview, its URL in the job summary (same-repo branches only: a fork's
-#                          pull request is given no secrets, so it could not deploy anyway)
-#   workflow_dispatch    → production, for a redeploy with no change (a new env var, a failed build)
+#   target: production   → tydbase.blivius.com
+#   target: preview      → a preview URL, written to the job summary
 
 on:
-  push:
-    branches: [main]
-    paths: &site
-      - "apps/site/**"
-      - "packages/ui/**"
-      - "packages/wasm-playground/**"
-      - "packages/config/**"
-      - "package.json"
-      - "bun.lock"
-      - "bunfig.toml"
-      - ".vercelignore"
-      - ".github/workflows/site.yml"
-  pull_request:
-    branches: [main]
-    paths: *site
   workflow_dispatch:
+    inputs:
+      target:
+        description: Where to deploy
+        type: choice
+        options: [production, preview]
+        default: production
 
 permissions:
   contents: read
 
-# One production deploy at a time, and a newer push replaces a waiting one; previews never queue
-# behind production.
+# One deploy per target at a time; a newer run waits for the one in progress.
 concurrency:
-  group: site-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: site-${{ inputs.target }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -71,9 +58,10 @@ jobs:
       - name: Deploy
         run: |
           prod=""
-          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then prod=--prod; fi
+          if [ "$TARGET" = production ]; then prod=--prod; fi
           url=$(bunx vercel@65.12.1 deploy $prod --yes --token "$VERCEL_TOKEN")
           echo "deployed: $url"
-          echo "${prod:+production }deployment: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "$TARGET deployment: $url" >> "$GITHUB_STEP_SUMMARY"
         env:
+          TARGET: ${{ inputs.target }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
