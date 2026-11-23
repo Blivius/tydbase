@@ -15,7 +15,7 @@ image (`.dockerignore`).
 | `compose.yml` | Production builds (`tydbase` project): engine on `:8080` (read-only rootfs, no capabilities); the site on `:3000` behind the `site` profile | `task up:prod` (self-host engine only: `docker compose -f docker/compose.yml up -d --build`) |
 | `compose.dev.yml` | Hot-reload overlay: `dev` targets, `engine/` and the site/package `src` dirs bind-mounted, Go caches in volumes | `task up` |
 | `compose.dbs.yml` | Seeded target DBs (`tydbase-dbs` project) | `docker compose -f docker/compose.dbs.yml up -d` |
-| `dbs/seed/` | Seeds: same domain as the site playground, 10k-row `query_events`, pgvector, Mongo carts, Redis keys | run automatically on first start |
+| `dbs/seed/` | Seeds: workspaces, members, saved queries, pgvector `ai_documents`, 10k-row `query_events`, Mongo carts, Redis keys | run automatically on first start |
 
 ## Target databases
 

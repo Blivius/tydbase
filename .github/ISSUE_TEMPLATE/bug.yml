@@ -19,9 +19,8 @@ body:
       label: Where
       options:
         - Engine API
-        - Web workspace
-        - MCP server
-        - CLI (start / server / mcp / agent)
+        - Team server (credentials, policy, approvals)
+        - CLI or terminal UI
         - Docker image or compose
         - Marketing site or waitlist
     validations:

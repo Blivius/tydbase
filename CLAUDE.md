@@ -1,4 +1,4 @@
-# CLAUDE.md — TydBase
+# CLAUDE.md: TydBase
 
 Standing brief for coding agents working in this repository. Read it first, every session.
 
@@ -138,7 +138,7 @@ Each module queries only its own tables.
 apps/site/            marketing site, caught-write demo, two-step waitlist API, PostHog proxy (Vercel)
 apps/web/             workspace SPA (P2), built into engine/internal/webui/dist
 packages/ui/          tokens.css, logo, shared components (CodeMirror SQL editor from P2)
-packages/sdk/         generated TS client — never edit schema.d.ts by hand
+packages/sdk/         generated TS client; never edit schema.d.ts by hand
 packages/wasm-playground/  PGlite caught-write demo hook + seed for the site
 packages/config/      shared tsconfig
 engine/               Go module github.com/blivius/tydbase/engine

@@ -17,10 +17,9 @@ Report it privately through
 
 Include what you can of:
 
-- the version (`tydbase version`) and how it runs (binary `start`/`server`, Docker image, the site);
-- the component (engine API, MCP server, credential vault, relay agent, web app, marketing site and
-  waitlist);
-- steps to reproduce: a request, a query, an MCP tool call, or a configuration;
+- the version (`tydbase version`) and how it runs (binary `server`, Docker image, the site);
+- the component (engine API, CLI, credential vault, approvals, marketing site and waitlist);
+- steps to reproduce: a request, a query, a CLI call, or a configuration;
 - what an attacker gains, and what they need first (network reach, an account, a token, the
   ability to put text in front of an AI agent).
 
@@ -42,10 +41,11 @@ Everything in this repository is in scope. These are vulnerabilities in particul
 
 - reading a stored database credential, or the vault key, without being its owner;
 - reaching another workspace's connections, queries, audit log or approvals (IDOR);
-- running a write through a read-only path: a query, an MCP tool, or `execute_read_query`;
-- bypassing a mutation approval, a guardrail or PII masking;
-- reaching a private, loopback or cloud-metadata address from `server` mode (SSRF);
-- MCP or API access without the token or session it requires, or beyond its scope;
+- running a write through a read-only path, such as a read query or a CLI call;
+- applying a write without a teammate's approval, or bypassing a guardrail or PII masking;
+- reaching a private, loopback or cloud-metadata address from a multi-tenant (Cloud) deployment
+  (SSRF); a self-hosted server reaching your own private database is intended;
+- API, CLI or MCP access without the token or session it requires, or beyond its scope;
 - a secret written to a log, an error, an audit entry or an AI agent's context;
 - a crafted query, result or tool call that stalls or crashes the engine.
 
