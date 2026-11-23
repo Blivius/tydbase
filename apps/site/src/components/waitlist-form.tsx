@@ -2,6 +2,7 @@
 
 import { type FormEvent, useId, useRef, useState } from "react";
 import { referrerTag, track } from "@/lib/analytics";
+import { BOOKING_URL } from "@/lib/links";
 import { readWaitlistResponse } from "@/lib/waitlist-response";
 
 const TEAM_SIZES = [
@@ -215,5 +216,22 @@ export function WaitlistForm({
     );
   }
 
-  return <div className={width}>{status}</div>;
+  return (
+    <div className={`flex flex-col gap-2 ${width}`}>
+      {status}
+      <p className="text-sm text-ink-secondary">
+        Easier to explain on a call?{" "}
+        <a
+          href={BOOKING_URL}
+          target="_blank"
+          rel="noopener"
+          onClick={() => track("call_click", { source })}
+          className="tyd-link"
+        >
+          Book 20 minutes with the founder
+        </a>
+        .
+      </p>
+    </div>
+  );
 }

@@ -6,6 +6,7 @@ export type AnalyticsEvent =
   | "signup_email"
   | "signup_details"
   | "signup_skipped"
+  | "call_click"
   | "github_click";
 
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
