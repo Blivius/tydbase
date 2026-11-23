@@ -50,14 +50,11 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return runOpenAPI(args[1:], stdout, stderr)
 	case "server":
 		return runServer(args[1:], stderr)
-	case "start":
-		_, err := fmt.Fprintln(stdout, "tydbase start (local-first workspace + embedded SQLite) ships in Phase 1.")
-		return err
 	case "agent":
-		_, err := fmt.Fprintln(stdout, "tydbase agent (outbound relay for private and localhost databases) ships in Phase 6.")
+		_, err := fmt.Fprintln(stdout, "tydbase agent (outbound relay for private and localhost databases) ships in Phase 4.")
 		return err
 	case "mcp":
-		_, err := fmt.Fprintln(stdout, "tydbase mcp (local stdio governed MCP) ships in Phase 2.")
+		_, err := fmt.Fprintln(stdout, "tydbase mcp (an MCP adapter over the same policy pipeline) ships in Phase 3.")
 		return err
 	default:
 		printUsage(stderr)
@@ -183,7 +180,7 @@ func runHealthcheck(args []string, stderr io.Writer) error {
 }
 
 func printUsage(w io.Writer) {
-	fmt.Fprintln(w, "TydBase — Open-source multiplayer database workspace & governed MCP control plane")
+	fmt.Fprintln(w, "TydBase by Blivius: safe database access for your team's AI coding agents")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  tydbase <command> [flags]")
@@ -193,7 +190,6 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "  openapi   Export the OpenAPI 3.1 JSON specification")
 	fmt.Fprintln(w, "  version   Print CLI version and Go runtime")
 	fmt.Fprintln(w, "  healthcheck  Exit 0 if the local server's /api/v1/health answers 200 (--url)")
-	fmt.Fprintln(w, "  start     Launch local-first workspace (Phase 1)")
-	fmt.Fprintln(w, "  agent     Run outbound relay for private databases (Phase 6)")
-	fmt.Fprintln(w, "  mcp       Run local stdio MCP for AI clients (Phase 2)")
+	fmt.Fprintln(w, "  mcp       MCP adapter for AI clients (Phase 3)")
+	fmt.Fprintln(w, "  agent     Outbound relay for private databases (Phase 4)")
 }
