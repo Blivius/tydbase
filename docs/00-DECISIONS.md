@@ -1,4 +1,4 @@
-# 00 — Decisions
+# 00: Decisions
 
 Each decision has a rationale. Many are negative: things deliberately not done. Before you propose
 something a decision rejects, read why it was rejected. Change a decision by editing this file in the
@@ -21,8 +21,8 @@ hold the password. Reads are scoped and masked, writes run as a dry run and wait
 approval with the row diff in front of them, and every query is audited with the person and the
 agent. The wedge is developer experience for teams of 2–30: one self-hosted binary, a CLI and skill
 for agents, a terminal UI for humans. Neighbours already cover parts of this (hoop.dev, Formal,
-Teleport, StrongDM, Bytebase DBHub, Google MCP Toolbox, polycore/pg-dry-run), so the combination and
-its craft are the product. *Rejected:* MCP as the product (it is one adapter, P3); the 2023
+Teleport, StrongDM, Bytebase DBHub, Google MCP Toolbox, polycore/pg-dry-run), so TydBase competes on that
+combination and on how well it is built. *Rejected:* MCP as the product (it is one adapter, P3); the 2023
 every-database browser client (a crowded, shrinking market); any "first" or "only" claim.
 
 **1.3 Brand and home (2026-11-23).** "TydBase by Blivius", next to Dispach under the Blivius "hard

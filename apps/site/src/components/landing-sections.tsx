@@ -4,7 +4,7 @@ import { WaitlistForm } from "@/components/waitlist-form";
 
 const PROBLEMS = [
   {
-    title: "Every laptop holds production",
+    title: "Production on every laptop",
     line: "Each developer's agent needs a connection string, so the password sits in every .env file and every agent's context.",
   },
   {
@@ -23,7 +23,7 @@ export function ProblemSection() {
       <div className="tyd-container">
         <div className="tyd-rule flex flex-col gap-12 pt-12">
           <h2 className="tyd-section-head max-w-[22ch] text-ink">
-            Every agent needs a connection string
+            Agents run on copied connection strings
           </h2>
           <dl className="flex flex-col">
             {PROBLEMS.map((p) => (

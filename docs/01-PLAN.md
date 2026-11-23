@@ -1,9 +1,9 @@
-# 01 — Plan
+# 01: Plan
 
 Implement one milestone at a time. A phase's Non-goals are binding. Stop at a milestone's acceptance
 criteria, then report and hand over chunked commit blocks (see `CLAUDE.md` → Handover format).
 
-Status: **Pre-Phase ✅ · Phase 0 ✅ · Phase 0.5 ✅ (2026-11-22: CI + Security green, tydbase.blivius.com live on Vercel) · Phase 1 · M1 ✅ · Phase V ← current (2026-11-23: reposition + 14-day landing test; product code paused, decision 5.9)**
+Status: Pre-Phase, Phase 0 and Phase 0.5 are done (2026-11-22: CI and security checks green, tydbase.blivius.com live on Vercel), and so is Phase 1 · M1. **Phase V is current** (2026-11-23): a 14-day landing-page test, with product code paused (decision 5.9).
 
 ---
 
@@ -36,7 +36,7 @@ Docker + Chrome validation (2026-11-22, Step 3):
 
 ---
 
-## Phase 0.5 — Hardening
+## Phase 0.5: Hardening
 
 **Goal:** a foundation that CI actually checks, an honest repo, Docker as the verification path, and
 a live waitlist.
@@ -68,7 +68,7 @@ reachable on their host ports.
 ---
 
 
-## Phase V — Reposition and validate (2026-11-23)
+## Phase V: Reposition and validate (2026-11-23)
 
 **Goal:** find out, in 14 days and before more product code, whether small teams want safe database
 access for their coding agents (decision 1.2). The repositioned page is the test.
@@ -94,7 +94,7 @@ same-origin; 0 console errors and no CSP violations.
 
 ---
 
-## Phase 1 — Team server MVP (Postgres), starts only if Phase V passes
+## Phase 1: Team server MVP (Postgres), starts only if Phase V passes
 
 **Goal:** a small team self-hosts one TydBase server. Each person's coding agent reads Postgres
 through the CLI with no password on its machine, and an agent's write runs only after a teammate has
@@ -126,7 +126,7 @@ TulipTech projects (until the IP letter exists).
 
 ---
 
-## Phase 2 — Web surface (what beta teams ask for first)
+## Phase 2: Web surface (what beta teams ask for first)
 
 **Goal:** the first web surface, chosen from beta feedback. Expected first: an approval page linked
 from the webhook message (diff, Approve, Reject), then the workspace views.
@@ -140,7 +140,7 @@ per-route deadlines, `RealIP` only behind `TYDBASE_TRUSTED_PROXY`, `WriteTimeout
 
 ---
 
-## Phase 3 — Adapters and engines
+## Phase 3: Adapters and engines
 
 **Scope:** a thin MCP adapter (go-sdk, stdio and Streamable HTTP with tokens) over the same
 pipeline; the out-of-process plugin protocol (gRPC) with SQLite/LibSQL as plugin #2, then MySQL and
@@ -151,7 +151,7 @@ MariaDB in the order teams ask; the SSH tunnel dialer.
 
 ---
 
-## Phase 4 — Cloud
+## Phase 4: Cloud
 
 **Scope:** `tydbase agent` outbound WSS relay; the SSRF-guarded dialer (multi-tenant only); Postgres metadata backend (unlocks multi-container
 `--modules`); GitHub OAuth; billing; `app.tydbase.blivius.com`.
@@ -161,7 +161,7 @@ ports.
 
 ---
 
-## Phase 5 — GA
+## Phase 5: GA
 
 **Scope:** invites and RBAC UI, audit export and retention, docs site, `CHANGELOG.md` and release
 notes, cutover to `tydbase.com`.
