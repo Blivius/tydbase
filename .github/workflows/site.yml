@@ -1,0 +1,79 @@
+name: Site
+
+# The landing page (`apps/site`) on Vercel, deployed with a token rather than Vercel's Git
+# integration (switched off in `apps/site/vercel.json`), so a deploy happens only when this runs.
+# The Vercel project's Root Directory is `apps/site`; `.vercelignore` keeps the engine and docs out
+# of the upload.
+#
+#   push to main         → production (tydbase.blivius.com)
+#   pull request         → a preview, its URL in the job summary (same-repo branches only: a fork's
+#                          pull request is given no secrets, so it could not deploy anyway)
+#   workflow_dispatch    → production, for a redeploy with no change (a new env var, a failed build)
+
+on:
+  push:
+    branches: [main]
+    paths: &site
+      - "apps/site/**"
+      - "packages/ui/**"
+      - "packages/wasm-playground/**"
+      - "packages/config/**"
+      - "package.json"
+      - "bun.lock"
+      - "bunfig.toml"
+      - ".vercelignore"
+      - ".github/workflows/site.yml"
+  pull_request:
+    branches: [main]
+    paths: *site
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One production deploy at a time, and a newer push replaces a waiting one; previews never queue
+# behind production.
+concurrency:
+  group: site-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  deploy:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Not secrets: they name the project, and the token is what grants access to it. The team is
+      # the Blivius team that also owns Dispach's site; the project is tydbase-landing-page.
+      VERCEL_ORG_ID: team_kF5gAInfg7ld7OI1wUPIFLCa
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Vercel settings are present
+        run: |
+          missing=""
+          [ -n "$VERCEL_TOKEN" ] || missing="$missing secret VERCEL_TOKEN,"
+          [ -n "$VERCEL_PROJECT_ID" ] || missing="$missing variable VERCEL_PROJECT_ID,"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing${missing%,}. Nothing was deployed. Set them under Settings → Secrets and variables → Actions (gh secret set / gh variable set) and re-run this job."
+            exit 1
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: |
+          prod=""
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then prod=--prod; fi
+          url=$(bunx vercel@65.12.1 deploy $prod --yes --token "$VERCEL_TOKEN")
+          echo "deployed: $url"
+          echo "${prod:+production }deployment: $url" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

@@ -1,0 +1,14 @@
+# Upload only what the site build needs. The Vercel project's Root Directory is apps/site, and
+# bun installs the whole workspace, so apps/* and packages/* manifests stay.
+engine/
+docs/
+docker/
+.claude/
+.hallmark/
+.remember/
+graphify-out/
+**/node_modules/
+**/.next/
+**/.env
+**/.env.*
+!**/.env.example
