@@ -82,6 +82,81 @@ SELECT 1 + (n % 4),
        TIMESTAMPTZ '2026-11-01 00:00:00+00' + n * INTERVAL '1 minute'
 FROM generate_series(1, 10000) AS n;
 
+-- Customers table with sequence-backed ID and audit trigger
+CREATE TABLE customers (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Audit trigger for customers
+CREATE OR REPLACE FUNCTION audit_customer_change()
+RETURNS TRIGGER AS $
+BEGIN
+  INSERT INTO customer_audit (customer_id, action, changed_at, old_data, new_data)
+  VALUES (
+    COALESCE(NEW.id, OLD.id),
+    TG_OP,
+    NOW(),
+    OLD,
+    NEW
+  );
+  RETURN NULL;
+END;
+$ LANGUAGE plpgsql;
+
+-- Audit table for customers
+CREATE TABLE customer_audit (
+  id BIGSERIAL PRIMARY KEY,
+  customer_id INT NOT NULL,
+  action TEXT NOT NULL,
+  changed_at TIMESTAMPTZ NOT NULL,
+  old_data JSONB,
+  new_data JSONB
+);
+
+-- Trigger for customers
+CREATE TRIGGER customers_audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON customers
+FOR EACH ROW EXECUTE FUNCTION audit_customer_change();
+
+-- Orders table with foreign key to customers (ON DELETE CASCADE)
+CREATE TABLE orders (
+  id SERIAL PRIMARY KEY,
+  customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  amount DECIMAL(10,2) NOT NULL,
+  status TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table without a primary key
+CREATE TABLE order_items (
+  order_id INT NOT NULL,
+  product_id INT NOT NULL,
+  quantity INT NOT NULL,
+  price DECIMAL(10,2) NOT NULL
+);
+
+-- Insert sample data
+INSERT INTO customers (name, email, created_at) VALUES
+  ('John Doe', 'john@example.com', '2026-11-01 10:00:00+00'),
+  ('Jane Smith', 'jane@example.com', '2026-11-01 11:00:00+00'),
+  ('Bob Johnson', 'bob@example.com', '2026-11-01 12:00:00+00');
+
+INSERT INTO orders (customer_id, amount, status, created_at) VALUES
+  (1, 99.99, 'paid', '2026-11-01 10:30:00+00'),
+  (1, 49.99, 'shipped', '2026-11-01 11:15:00+00'),
+  (2, 149.99, 'paid', '2026-11-01 12:45:00+00'),
+  (3, 29.99, 'pending', '2026-11-01 13:20:00+00');
+
+INSERT INTO order_items (order_id, product_id, quantity, price) VALUES
+  (1, 101, 1, 99.99),
+  (2, 102, 2, 24.99),
+  (2, 103, 1, 25.00),
+  (3, 104, 1, 149.99),
+  (4, 105, 3, 9.99);
+
 -- Least-privilege login, the way TydBase docs tell users to connect.
 CREATE ROLE tydbase_readonly LOGIN PASSWORD 'tydbase_readonly_dev_password';
 GRANT CONNECT ON DATABASE tydbase_dev TO tydbase_readonly;
